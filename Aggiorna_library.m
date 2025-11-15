@@ -3,7 +3,9 @@
 % nuove versioni usando Source e non Reference, attento brodo
 % basta cambiare old e new in base ai nomi che salvano
 
-% ho 
+% se vuoi cambiare altro cambia anche il sistem da aprire
+
+% Aggiorna la libreria per tutti i blocchi trovati
 
 open_system('sim_lab7_disturbances.slx')
 

@@ -286,34 +286,6 @@ t0 = 0;         %[s]
 % title('FFT of By')
 % xlim([0,4]);
 
-%% AGGIORNO LIBRARY
-
-
-correctLib = 'LIBRARY_SAD';             % Nome corretto
-wrongPrefix = 'lIBRARY_SAD_SAD';        % Prefisso errato trovato nell'output
-
-blks = find_system(gcs, 'LookUnderMasks','all','FollowLinks','on');
-
-for i = 1:numel(blks)
-    try
-        src = get_param(blks{i}, 'SourceBlock');
-
-        % caso 1: inizia con il prefisso sbagliato
-        if startsWith(src, [wrongPrefix '/'])
-            suffix = src(length(wrongPrefix)+1:end);
-            newSrc = [correctLib suffix];
-            set_param(blks{i}, 'SourceBlock', newSrc);
-        end
-
-        % caso 2: contiene in mezzo il prefisso sbagliato (non all'inizio)
-        if contains(src, [wrongPrefix '/']) && ~startsWith(src, [wrongPrefix '/'])
-            newSrc = strrep(src, [wrongPrefix '/'], [correctLib '/']);
-            set_param(blks{i}, 'SourceBlock', newSrc);
-        end
-
-    catch
-    end
-end
 
 
 

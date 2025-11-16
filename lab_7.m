@@ -290,5 +290,56 @@ t0 = 0;         %[s]
 % xlim([0,4]);
 
 
+%% Per albedo try vectors
+
+I_moments = diag(J_depl);
+K_yaw = (I_moments(3)-I_moments(2))/I_moments(1);
+K_roll = (I_moments(3)-I_moments(1))/I_moments(2);
+K_pitch = (I_moments(2)-I_moments(1))/I_moments(3);
+
+K_yaw=(Iy-Iz)/Ix;
+K_roll=(Iz-Ix)/Iy;
+K_pitch=(Ix-Iy)/Iz;
+
+P=Fe/c;
+
+Nmat=[
+    1 0 0;
+    0 1 0;
+    -1 0 0;
+    0 -1 0;
+    0 0 1;
+    0 0 -1;
+    1 0 0;
+    -1 0 0;
+    1 0 0;
+    -1 0 0;
+];
+
+
+rhos=zeros(10,1);
+rhos(1:6,1)=0.5;
+rhos(7:10)=0.1;
+
+rhod=0.1*ones(10,1);
+
+Aree=zeros(10,1);
+Aree(1:4)=6e-2;
+Aree(5:6)=4e-2;
+Aree(7:10)=12e-2;
+
+rf=[
+    10e-2 0 0;
+    0 10e-2 0;
+    -10e-2 0 0;
+    0 -10e-2 0;
+    0 0 15e-2;
+    0 0 -15e-2;
+    0 45e-2 0;
+    0 45e-2 0;
+    0 -45e-2 0;
+    0 -45e-2 0;
+];
+
 
 

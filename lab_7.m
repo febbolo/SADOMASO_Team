@@ -156,6 +156,7 @@ SRP.panel4.r_F = [0,-45,0]*1e-2; %[m]
 
 
 
+
 % Note that SRP torque DOES NOT DEPEND on initial conditions on omega, or
 % satellite properties in terms of inertia. It only depends on the distance
 % from the barycenter and on the extension of the cross section.

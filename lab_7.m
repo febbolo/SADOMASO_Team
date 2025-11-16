@@ -297,11 +297,7 @@ K_yaw = (I_moments(3)-I_moments(2))/I_moments(1);
 K_roll = (I_moments(3)-I_moments(1))/I_moments(2);
 K_pitch = (I_moments(2)-I_moments(1))/I_moments(3);
 
-K_yaw=(Iy-Iz)/Ix;
-K_roll=(Iz-Ix)/Iy;
-K_pitch=(Ix-Iy)/Iz;
-
-P=Fe/c;
+P=F_e/c;
 
 Nmat=[
     1 0 0;
@@ -330,9 +326,9 @@ Aree(7:10)=12e-2;
 
 rf=[
     10e-2 0 0;
-    0 10e-2 0;
+    0 12e-2 0;
     -10e-2 0 0;
-    0 -10e-2 0;
+    0 -12e-2 0;
     0 0 15e-2;
     0 0 -15e-2;
     0 45e-2 0;

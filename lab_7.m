@@ -1,7 +1,7 @@
 %% Earth-S/C
 
 clear
-clc
+clc;
 close all
 
 % S/C Inertia 

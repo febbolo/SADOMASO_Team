@@ -92,7 +92,7 @@ r_sun = 1*ua;       %[km]
 %% Solar Radiation Pressure (SRP) Torque
 
 F_e = 1358; %[W/m^2]
-F_earth = 237 * (1/(1+()))
+F0=237;
 c = astroConstants(5)*1e3;  %[m/s]
 
 SRP.body1.N_hat = [1,0,0];
@@ -325,17 +325,18 @@ Aree(1:4)=6e-2;
 Aree(5:6)=4e-2;
 Aree(7:10)=12e-2;
 
+
 rf=[
-    SRP.body1.r_F 0 0;
-    0 SRP.body2.r_F 0;
-    SRP.body3.r_F 0 0;
-    0 SRP.body4.r_F 0;
-    0 0 SRP.body5.r_F;
-    0 0 SRP.body6.r_F;
-    0 SRP.panel1.r_F 0;
-    0 SRP.panel2.r_F 0;
-    0 SRP.panel3.r_F 0;
-    0 SRP.panel4.r_F 0;
+    10e-2 0 0;
+    0 10e-2 0;
+    -10e-2 0 0;
+    0 -10e-2 0;
+    0 0 15e-2;
+    0 0 -15e-2;
+    0 45e-2 0;
+    0 45e-2 0;
+    0 -45e-2 0;
+    0 -45e-2 0;
 ];
 
 

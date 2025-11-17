@@ -325,16 +325,16 @@ Aree(5:6)=4e-2;
 Aree(7:10)=12e-2;
 
 rf=[
-    10e-2 0 0;
-    0 12e-2 0;
-    -10e-2 0 0;
-    0 -12e-2 0;
-    0 0 15e-2;
-    0 0 -15e-2;
-    0 45e-2 0;
-    0 45e-2 0;
-    0 -45e-2 0;
-    0 -45e-2 0;
+    SRP.body1.r_F 0 0;
+    0 SRP.body2.r_F 0;
+    SRP.body3.r_F 0 0;
+    0 SRP.body4.r_F 0;
+    0 0 SRP.body5.r_F;
+    0 0 SRP.body6.r_F;
+    0 SRP.panel1.r_F 0;
+    0 SRP.panel2.r_F 0;
+    0 SRP.panel3.r_F 0;
+    0 SRP.panel4.r_F 0;
 ];
 
 

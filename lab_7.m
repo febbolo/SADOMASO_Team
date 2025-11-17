@@ -105,7 +105,7 @@ SRP.body2.N_hat = [0,1,0];
 SRP.body2.rho_s = 0.5;
 SRP.body2.rho_d = 0.1;
 SRP.body2.A = 6e-2;            %[m^2]
-SRP.body2.r_F = [0,10,0]*1e-2; %[m]
+SRP.body2.r_F = [0,12,0]*1e-2; %[m]
 
 SRP.body3.N_hat = [-1,0,0];
 SRP.body3.rho_s = 0.5;
@@ -117,7 +117,7 @@ SRP.body4.N_hat = [0,-1,0];
 SRP.body4.rho_s = 0.5;
 SRP.body4.rho_d = 0.1;
 SRP.body4.A = 6e-2;            %[m^2]
-SRP.body4.r_F = [0,-10,0]*1e-2;       %[m]
+SRP.body4.r_F = [0,-12,0]*1e-2;       %[m]
 
 SRP.body5.N_hat = [0,0,1];
 SRP.body5.rho_s = 0.5;

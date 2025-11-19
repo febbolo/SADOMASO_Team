@@ -257,9 +257,9 @@ t0 = 0;      %[s]
 
 %% CHECKING ORTHONORMALITY && ATTITUDE
 
-%{
 
-simout = sim('sim_lab7_disturbances');
+
+simout = sim('SIM_SAD_DEMO');
 time = simout.tout; 
 A_B_N = simout.A_B_N;
 A_B_N_ortho = simout.A_B_N_ortho;
@@ -329,5 +329,3 @@ title('Angular Velocity in Z Direction');
 xlabel('Time (s)');
 ylabel('error on w_z (rad/s)');
 grid on;
-
-%}

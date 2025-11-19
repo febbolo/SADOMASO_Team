@@ -257,6 +257,8 @@ t0 = 0;      %[s]
 
 %% CHECKING ORTHONORMALITY && ATTITUDE
 
+%{
+
 simout = sim('sim_lab7_disturbances');
 time = simout.tout; 
 A_B_N = simout.A_B_N;
@@ -328,8 +330,4 @@ xlabel('Time (s)');
 ylabel('error on w_z (rad/s)');
 grid on;
 
-
-
-
-
-
+%}

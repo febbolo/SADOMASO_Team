@@ -313,19 +313,19 @@ end
 % angular velocity wrt the LVLH angular velocity
 figure('Name','Error on w (B wrt LVLH) over time')
 subplot(3, 1, 1);
-plot(time, w_B_LVLH(:,1), 'b', 'LineWidth', 1.5);
+plot(time, w_B_LVLH(1,:), 'b', 'LineWidth', 1.5);
 title('Angular Velocity in X Direction');
 xlabel('Time (s)');
 ylabel('error on w_x (rad/s)');
 grid on;
 subplot(3, 1, 2);
-plot(time, w_B_LVLH(:,2), 'r', 'LineWidth', 1.5);
+plot(time, w_B_LVLH(2,:), 'r', 'LineWidth', 1.5);
 title('Angular Velocity in Y Direction');
 xlabel('Time (s)');
 ylabel('error on w_y (rad/s)');
 grid on;
 subplot(3, 1, 3);
-plot(time, w_B_LVLH(:,3), 'g', 'LineWidth', 1.5);
+plot(time, w_B_LVLH(3,:), 'g', 'LineWidth', 1.5);
 title('Angular Velocity in Z Direction');
 xlabel('Time (s)');
 ylabel('error on w_z (rad/s)');

@@ -353,16 +353,16 @@ grid on;
 
 % Sun Sensor : Solar MEMS nanoSSOC-D60 
 % Sampling Time from data sheet 
-Sun_sensor.f = 50;     %Sampling frequency [Hz]
+Sun_sensor.f = 10;     %Sampling frequency [Hz]
 Sun_sensor.Ts = 1/Sun_sensor.f; %Sampling time [s]
 Sun_sensor.R = [1, deg2rad(0.1), -deg2rad(0.1);
                 -deg2rad(0.1), 1, deg2rad(0.1);
                 deg2rad(0.1), -deg2rad(0.1), 1]; % Misalignment Error Matrix [rad]
 Sun_sensor.D = 0.01; % Noise density [u/sqrt(Hz)]
 Sun_sensor.b = 0.05; %[deg]
-Sun_sensor.AD_nbit = 14; % Number of bits of A/D 
+Sun_sensor.AD_nbit = 12; % Number of bits of A/D 
 Sun_sensor.FS = 120;     % [deg]
-Sun_sensor.epsQ = Sun_sensor.FS/ (2^(Sun_sensor.AD_nbit));  %[levels]
+Sun_sensor.LSB = Sun_sensor.FS/ (2^(Sun_sensor.AD_nbit));  %[levels]
 Sun_sensor.FOV = [-60 60]; %[deg]
 Sun_sensor.lat = 1;      %[sample]
 

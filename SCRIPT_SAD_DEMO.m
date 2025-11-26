@@ -363,6 +363,6 @@ Sun_sensor.b = 0.05; %[deg]
 Sun_sensor.AD_nbit = 14; % Number of bits of A/D 
 Sun_sensor.FS = 120;     % [deg]
 Sun_sensor.epsQ = Sun_sensor.FS/ (2^(Sun_sensor.AD_nbit));  %[levels]
-Sun_sensor.FOV = [-60 60]; %[deg]
+Sun_sensor.FOV = [-180 180]; %[deg]
 Sun_sensor.lat = 1;      %[sample]
 

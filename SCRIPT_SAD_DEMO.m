@@ -1,4 +1,11 @@
-%% Earth-S/C
+%% -------------- TO DO -----------------
+% ONLY SCRIPT / SIMULINK STUFF
+% 1) Cycle for B_IGRF and optimization
+% 2) Ordering Albedo and Earth Radiation Pressure
+
+
+
+%% ------------ DATA : Earth-S/C ------------
 
 clear
 clc
@@ -16,7 +23,7 @@ J_depl = [100.9, 0, 0;...
 e = 0.05; % Low eccentricity orbit : for plot/debug/simulation
 % e = 0;
 % incl = astroConstants(63);   %[deg]
-incl = 50;   %[deg]
+incl = 20;   %[deg]
 raan = 0;   %[deg]
 w = 0;     %[deg]
 theta = 0;  %[deg]
@@ -42,7 +49,7 @@ w0 = [0; 0; n];  %[rad/s]
 % Creating initial condition Keplerian elements vector
 kep = [a,e,incl,raan,w,theta];
 
-%% Sun-Earth
+%% ---------------- Sun-Earth -----------------
 
 % Revolution Solar Year Period
 T_sun = 365*24*60*60;        % [s]
@@ -59,7 +66,7 @@ r_sun = 1*ua;       %[km]
 
 
 
-%% Solar Radiation Pressure (SRP) Torque
+%% ------------- Solar Radiation Pressure (SRP) Torque ----------
 
 F_e = 1358; %[W/m^2]
 c = astroConstants(5)*1e3;  %[m/s]
@@ -130,12 +137,7 @@ SRP.panel4.r_F = [0,-45,0]*1e-2; %[m]
 % If we consider a symmetric S/C in terms of reflective surfaces, panels ecc.. we obtain a zero torque
 % The only way to change the torque is to consider a non-symmetric S/C.
 
-%% ALbedo / Earth Radiation Models - DEMO
-
-I_moments = diag(J_depl);
-K_yaw = (I_moments(3)-I_moments(2))/I_moments(1);
-K_roll = (I_moments(3)-I_moments(1))/I_moments(2);
-K_pitch = (I_moments(2)-I_moments(1))/I_moments(3);
+%% ---------  ALbedo / Earth Radiation Models - DEMO -----------
 
 P=F_e/c;
 
@@ -180,7 +182,7 @@ rf=[
 
 F0 = 237; %[W/m^2]
 
-%% GG torque (for inclined and elliptical orbits)
+%% ---------- GG torque (for inclined and elliptical orbits) ------------
 
 % Adimensional coefficients for stability
 I_moments = diag(J_depl);
@@ -196,21 +198,7 @@ else
 end
 
 
-%% Magnetic Torque
-% 
-% j_B = [0.01; 0.05; 0.01]; % [A*m^2], dipole vector of S/C
-% w_E = deg2rad(15.04)/3600; %[rad/s], average angular velocity of the Earth 
-% 
-% % Coefficients for H_0, Simple Dipole Model (DGRF 2000)
-% g0_1 = -29404.8e-9; %[T = N/(A*m)]
-% g1_1 = -1450.9e-9;  %T
-% h1_1 = 4652.5e-9;   %T
-% 
-% % Initial conditions for ra_GST
-% theta_G_0 = 0;  %[deg]
-% t0 = 0;         %[s]
-
-%% Magnetic Torque (IGRF 2025 Model) - Optimization Cycle for B
+%% -------- Magnetic Torque (IGRF 2025 Model) - Optimization Cycle for B ------
 
 g_tab = readmatrix("IGRF14_g_coeffs_2025.csv");
 h_tab = readmatrix("IGRF14_h_coeffs_2025.csv");
@@ -220,7 +208,7 @@ for N = 1:13
     
 end 
 
-%% Magnetic Torque (IGRF 2025 Model)
+%% ------------- Magnetic Torque (IGRF 2025 Model) ----------------
 
 % Date Time 
 startTime = datetime(2025,1,1,0,0,0);   % Initial time epoch of project (TO BE DEFINED)
@@ -253,9 +241,45 @@ clear g_tab
 clear h_tab
 t0 = 0;      %[s]
 
+%% -------------- SENSORS ------------------
 
+% Sun Sensor : Solar MEMS nanoSSOC-D60 
+% Sampling Time from data sheet 
+Sun_sensor.f = 5;     %Sampling frequency [Hz], IN REALITY MUCH BIGGER --> ASK!!!
+Sun_sensor.Ts = 1/Sun_sensor.f; %Sampling time [s]
+Sun_sensor.R = [1, deg2rad(0.1), -deg2rad(0.1);
+                -deg2rad(0.1), 1, deg2rad(0.1);
+                deg2rad(0.1), -deg2rad(0.1), 1]; % Misalignment Error Matrix [rad]
+Sun_sensor.D = 0.1; % Noise density [u/sqrt(Hz)]
+Sun_sensor.b = 0.05; %[deg]
+Sun_sensor.AD_nbit = 12; % Number of bits of A/D 
+Sun_sensor.FS = 120;     % [deg]
+Sun_sensor.LSB = Sun_sensor.FS/ (2^(Sun_sensor.AD_nbit));  %[levels]
+Sun_sensor.FOV = [-60 60]; %[deg]
+Sun_sensor.lat = 1;      %[sample]
 
-%% CHECKING ORTHONORMALITY && ATTITUDE
+% Magnetometer : BOSCH BMM350DS-001
+Magmeter.f = 5;         %Sampling frequency [Hz], IN REALITY MUCH BIGGER --> ASK!!!
+Magmeter.Ts = 1/Magmeter.f; %Sampling time [s]
+Magmeter.O = [1, deg2rad(0.1), -deg2rad(0.1);
+                -deg2rad(0.1), 1, deg2rad(0.1);
+                deg2rad(0.1), -deg2rad(0.1), 1]; % Non-orthogonality Error Matrix [rad]
+Magmeter.R = [1, deg2rad(0.1), -deg2rad(0.1);
+                -deg2rad(0.1), 1, deg2rad(0.1);
+                deg2rad(0.1), -deg2rad(0.1), 1]; % Misalignment Error Matrix [rad]
+Magmeter.Dx = 27e-9; % Noise density on x [nT/sqrt(Hz)] (data sheet)
+Magmeter.Dy = 27e-9; % Noise density on y [nT/sqrt(Hz)] (data sheet)
+Magmeter.Dz = 64e-9; % Noise density on x [nT/sqrt(Hz)] (data sheet)
+Magmeter.b = 2e-6; % Bias Error [ from muT -> to T] (data sheet)
+Magmeter.AD_nbit = 16; % Number of bits of A/D (data sheet)
+Magmeter.FS = 4000e-6; % Maximum range [from muT -> to T] (data sheet)
+Magmeter.LSB = Magmeter.FS/ (2^(Magmeter.AD_nbit)); % Least Significant Bit [levels]
+Magmeter.lat = 1; % Latency [sample]
+Magmeter.SFNx = 10e-6; % Scale factor Nonlinearity on x [from muT-> to T]
+Magmeter.SFNy = 10e-6; % Scale factor Nonlinearity on y [from muT-> to T]
+Magmeter.SFNz = 20e-6; % Scale factor Nonlinearity on z [from muT-> to T]
+
+%% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
 
 
 
@@ -331,38 +355,25 @@ xlabel('Time (s)');
 ylabel('error on w_z (rad/s)');
 grid on;
 
-%% SATELLITE SCENARIO
+%% ----------- SATELLITE SCENARIO ----------------
 
-% % Conversion a km -> m
-% a = a*1000;         %[m]
-% 
-% % Satellite Scenario 
-% stopTime = startTime + seconds(T);
-% sampleTime = 60;
-% sc = satelliteScenario(startTime,stopTime,sampleTime);
-% viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
-% sat = satellite(sc,a,e,incl,raan,w,theta);
-% show(sat)
-% groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
-% play(sc,PlaybackSpeedMultiplier=500)
-% 
-% % Conversion a m -> km
-% a = a/1000;         %[km] 
+% Conversion a km -> m
+a = a*1000;         %[m]
 
-%% SENSORS 
+% Satellite Scenario 
+stopTime = startTime + seconds(T);
+sampleTime = 60;
+sc = satelliteScenario(startTime,stopTime,sampleTime);
+viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
+sat = satellite(sc,a,e,incl,raan,w,theta);
+show(sat)
+sat.Visual3DModel = "SmallSat.glb";
+coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
+camtarget(viewer, sat);
+groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
+play(sc,PlaybackSpeedMultiplier=500)
 
-% Sun Sensor : Solar MEMS nanoSSOC-D60 
-% Sampling Time from data sheet 
-Sun_sensor.f = 10;     %Sampling frequency [Hz]
-Sun_sensor.Ts = 1/Sun_sensor.f; %Sampling time [s]
-Sun_sensor.R = [1, deg2rad(0.1), -deg2rad(0.1);
-                -deg2rad(0.1), 1, deg2rad(0.1);
-                deg2rad(0.1), -deg2rad(0.1), 1]; % Misalignment Error Matrix [rad]
-Sun_sensor.D = 0.01; % Noise density [u/sqrt(Hz)]
-Sun_sensor.b = 0.05; %[deg]
-Sun_sensor.AD_nbit = 12; % Number of bits of A/D 
-Sun_sensor.FS = 120;     % [deg]
-Sun_sensor.LSB = Sun_sensor.FS/ (2^(Sun_sensor.AD_nbit));  %[levels]
-Sun_sensor.FOV = [-60 60]; %[deg]
-Sun_sensor.lat = 1;      %[sample]
+% Conversion a m -> km
+a = a/1000;         %[km] 
+
 

@@ -272,12 +272,15 @@ Magmeter.Dy = 27e-9; % Noise density on y [nT/sqrt(Hz)] (data sheet)
 Magmeter.Dz = 64e-9; % Noise density on x [nT/sqrt(Hz)] (data sheet)
 Magmeter.b = 2e-6; % Bias Error [ from muT -> to T] (data sheet)
 Magmeter.AD_nbit = 16; % Number of bits of A/D (data sheet)
-Magmeter.FS = 4000e-6; % Maximum range [from muT -> to T] (data sheet)
-Magmeter.LSB = Magmeter.FS/ (2^(Magmeter.AD_nbit)); % Least Significant Bit [levels]
+Magmeter.FS = [-2000e-6 2000e-6]; % Maximum range [from muT -> to T] (data sheet)
+Magmeter.LSB = ( Magmeter.FS(2) - Magmeter.FS(1)) / (2^(Magmeter.AD_nbit)); % Least Significant Bit [levels]
 Magmeter.lat = 1; % Latency [sample]
-Magmeter.SFNx = 10e-6; % Scale factor Nonlinearity on x [from muT-> to T]
-Magmeter.SFNy = 10e-6; % Scale factor Nonlinearity on y [from muT-> to T]
-Magmeter.SFNz = 20e-6; % Scale factor Nonlinearity on z [from muT-> to T]
+Magmeter.SFNx = 2.5; % Scale factor Nonlinearity on x [1/T]
+Magmeter.SFNy = 2.5; % Scale factor Nonlinearity on y [1/T]
+Magmeter.SFNz = 5; % Scale factor Nonlinearity on z [1/T]
+
+
+
 
 %% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
 

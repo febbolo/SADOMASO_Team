@@ -245,7 +245,7 @@ t0 = 0;      %[s]
 
 % Sun Sensor : Solar MEMS nanoSSOC-D60 
 % Sampling Time from data sheet 
-Sun_sensor.f = 5;     %Sampling frequency [Hz], IN REALITY MUCH BIGGER --> ASK!!!
+Sun_sensor.f = 5;     %Sampling frequency [Hz]
 Sun_sensor.Ts = 1/Sun_sensor.f; %Sampling time [s]
 Sun_sensor.R = [1, deg2rad(0.1), -deg2rad(0.1);
                 -deg2rad(0.1), 1, deg2rad(0.1);
@@ -259,7 +259,7 @@ Sun_sensor.FOV = [-60 60]; %[deg]
 Sun_sensor.lat = 1;      %[sample]
 
 % Magnetometer : BOSCH BMM350DS-001
-Magmeter.f = 5;         %Sampling frequency [Hz], IN REALITY MUCH BIGGER --> ASK!!!
+Magmeter.f = 5;         %Sampling frequency [Hz]
 Magmeter.Ts = 1/Magmeter.f; %Sampling time [s]
 Magmeter.O = [1, deg2rad(0.1), -deg2rad(0.1);
                 -deg2rad(0.1), 1, deg2rad(0.1);
@@ -274,12 +274,14 @@ Magmeter.b = 2e-6; % Bias Error [ from muT -> to T] (data sheet)
 Magmeter.AD_nbit = 16; % Number of bits of A/D (data sheet)
 Magmeter.FS = [-2000e-6 2000e-6]; % Maximum range [from muT -> to T] (data sheet)
 Magmeter.LSB = ( Magmeter.FS(2) - Magmeter.FS(1)) / (2^(Magmeter.AD_nbit)); % Least Significant Bit [levels]
-Magmeter.lat = 1; % Latency [sample]
+Magmeter.lat = 5; % Latency [sample]
 Magmeter.SFNx = 2.5; % Scale factor Nonlinearity on x [1/T]
 Magmeter.SFNy = 2.5; % Scale factor Nonlinearity on y [1/T]
 Magmeter.SFNz = 5; % Scale factor Nonlinearity on z [1/T]
-
-
+% Magmeter.ARW.num = [1, 10.1, 10.3, 10.8, 12]; % Numerator of TF for Lowpass filter of Pink Noise
+% Magmeter.ARW.den = [1, 10 , 10.2, 10.5, 11, 15 ]; % Denominator of TF for Lowpass filter of Pink Noise
+% H = tf(Magmeter.ARW.num,Magmeter.ARW.den);
+% bode(H)
 
 
 %% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------

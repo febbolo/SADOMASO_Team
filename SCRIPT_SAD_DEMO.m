@@ -283,6 +283,18 @@ Magmeter.SFNz = 5; % Scale factor Nonlinearity on z [1/T]
 % H = tf(Magmeter.ARW.num,Magmeter.ARW.den);
 % bode(H)
 
+%% ------------- ATTITUDE DETERMINATION STATISTICAL ----------
+
+Magmeter.accuracy = 0.00475;
+Magmeter.weight = 1/Magmeter.accuracy;
+
+Sun_sensor.accuracy = 0.01*pi/180;
+Sun_sensor.weight = 1/Sun_sensor.accuracy;
+
+Magmeter.alpha = Magmeter.weight / (Magmeter.weight + Sun_sensor.weight);
+Sun_sensor.alpha = Sun_sensor.weight / (Magmeter.weight + Sun_sensor.weight);
+
+
 
 %% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
 

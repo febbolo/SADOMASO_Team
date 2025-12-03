@@ -278,17 +278,14 @@ Magmeter.lat = 5; % Latency [sample]
 Magmeter.SFNx = 2.5; % Scale factor Nonlinearity on x [1/T]
 Magmeter.SFNy = 2.5; % Scale factor Nonlinearity on y [1/T]
 Magmeter.SFNz = 5; % Scale factor Nonlinearity on z [1/T]
-% Magmeter.ARW.num = [1, 10.1, 10.3, 10.8, 12]; % Numerator of TF for Lowpass filter of Pink Noise
-% Magmeter.ARW.den = [1, 10 , 10.2, 10.5, 11, 15 ]; % Denominator of TF for Lowpass filter of Pink Noise
-% H = tf(Magmeter.ARW.num,Magmeter.ARW.den);
-% bode(H)
 
-%% ------------- ATTITUDE DETERMINATION STATISTICAL ----------
 
-Magmeter.accuracy = 0.00475;
+%% ------------- ATTITUDE DETERMINATION : q-method ----------
+
+Magmeter.accuracy = 0.00475;        % [deg]
 Magmeter.weight = 1/Magmeter.accuracy;
 
-Sun_sensor.accuracy = 0.01*pi/180;
+Sun_sensor.accuracy = 0.01*pi/180;  % [deg]
 Sun_sensor.weight = 1/Sun_sensor.accuracy;
 
 Magmeter.alpha = Magmeter.weight / (Magmeter.weight + Sun_sensor.weight);

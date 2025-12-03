@@ -3,12 +3,13 @@
 % 1) Cycle for B_IGRF and optimization
 % 2) Ordering Albedo and Earth Radiation Pressure
 % 3) Pink noise (Lowpass Filter)
-% 4) Sun synchronous Orbit (and Saturation for Sun-sensor) and Sun Pointing
+% 4) Sun Pointing, Sun synchronous ALMOST DONE?????
 % 5) Control
 % 6) Actuators
+% 7) VALIDATE ATTITUDE DETERMINATION
 
 
-%% ------------ DATA : Earth-S/C ------------
+%% ------------ DATA : Earth-S/C - Sun synchronous Orbit ------------
 
 clear
 clc
@@ -22,21 +23,26 @@ J_depl = [100.9, 0, 0;...
 %           0, 4, 0;...
 %           0, 0, 6]*1e-2; %kg*m^2
 
-% Orbital Parameters for LEO orbit (Ex. 3 Lab 2 Orbital Mechanics)
-e = 0.05; % Low eccentricity orbit : for plot/debug/simulation
-% e = 0;
-% incl = astroConstants(63);   %[deg]
-incl = 20;   %[deg]
+% Constants
+G = 6.67e-20; % [km^3/(kg*s^2)]
+Mt = 5.97e24;   % [kg]
+Re = astroConstants(23); %[km]
+J2 = 0.00108263; % Second Zonal harmonic
+mu = astroConstants(13); %[km^3/s^2]
+
+% Date Time 
+startTime = datetime(2025,1,1,0,0,0);   % Initial time epoch of project (TO BE DEFINED)
+
+% Orbital Parameters
+e = 0.005; % Low eccentricity orbit
+draan = 1.99096871e-7; % Sun-synchronous rate of precession of raan [rad/s]
+zp = 600; %[km]
+rp = zp + Re; %[km]
+a = rp * (1 - e);  % Semi-major axis [km]
 raan = 0;   %[deg]
 w = 0;     %[deg]
 theta = 0;  %[deg]
-mu = astroConstants(13); %[km^3/s^2]
-a = 7200; %[km]
-
-% Orbital Data
-G = 6.67e-20; %km^3/(kg*s^2)
-Mt = 5.97e24;   %kg
-Re = astroConstants(23); %km
+incl = rad2deg( acos( -2/3 * (1-e^2)^2*a^(7/2) * draan / ( sqrt(mu)*J2*Re^2 ) )); %[deg]
 
 % Mean motion
 n = sqrt( (mu/ (a)^3));   %[rad/s]
@@ -48,7 +54,6 @@ T = 2*pi/n;     %[s]
 w0 = [0; 0; n];  %[rad/s]
 % w0 = [1e-6; 1e-6; n];  %[rad/s]
 
-
 % Creating initial condition Keplerian elements vector
 kep = [a,e,incl,raan,w,theta];
 
@@ -56,8 +61,10 @@ kep = [a,e,incl,raan,w,theta];
 
 % Revolution Solar Year Period
 T_sun = 365*24*60*60;        % [s]
+
 % Computing mean motion of Earth around the Sun
 n_sun = 2*pi/T_sun;         %[rad/s]
+
 % Obliquity of Equatorial Plane
 eps_E = deg2rad(astroConstants(63)); %[rad]
 
@@ -213,8 +220,6 @@ end
 
 %% ------------- Magnetic Torque (IGRF 2025 Model) ----------------
 
-% Date Time 
-startTime = datetime(2025,1,1,0,0,0);   % Initial time epoch of project (TO BE DEFINED)
 JD0 = juliandate(startTime);            % Conversion in Julian Date
 
 j_B = [0.01; 0.05; 0.01]; % [A*m^2], dipole vector of S/C
@@ -298,101 +303,101 @@ q.Ts = max (Sun_sensor.Ts, Magmeter.Ts);
 
 
 
-% %% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
-% 
-% 
-% 
-% simout = sim('SIM_SAD_DEMO');
-% time = simout.tout; 
-% A_B_N = simout.A_B_N;
-% A_B_N_ortho = simout.A_B_N_ortho;
-% A_B_LVLH = simout.A_B_LVLH;
-% w_B_LVLH = simout.w_B_LVLH;
-% 
-% 
-% 
-% % Pre-allocate Q, error and norm_error
-% Q = zeros(3, 3, length(time));
-% error = zeros(3, 3, length(time));
-% norm_error = zeros(1, length(time));
-% 
-% % Testing Orthonormality of A
-% for i = 1:length(time)
-%     Q(:,:,i) =A_B_N(:,:,i)'*A_B_N(:,:,i);
-%     error(:,:,i) = abs(eye(3)-Q(:,:,i));
-%     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
-% end
-% 
-% % Plot orthonormality error of A
-% figure('Name','Orthonormality error of A')
-% plot(time, norm_error)
-% 
-% % Testing Orthonormality of A_ortho
-% for i = 1:length(time)
-%     Q(:,:,i) = A_B_N_ortho(:,:,i)'*A_B_N_ortho(:,:,i);
-%     error(:,:,i) = abs(eye(3)-Q(:,:,i));
-%     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
-% end
-% 
-% % Plot orthonormality error of A_ortho
-% figure('Name','Orthonormality error of A after orthonormalisation')
-% plot(time, norm_error)
-% 
-% % Plot the attitude error between Body Frame and Uniformly rotating LVLH
-% % Frame
-% figure('Name','Attitude Matrix A_B_LVLH Components over Time');
-% for i = 1:3
-%     for j = 1:3
-%         subplot(3, 3, (i-1)*3 + j);
-%         plot(time, squeeze(A_B_LVLH(i, j, :)), 'LineWidth', 1.5);
-%         title(['A_{' num2str(i) num2str(j) '} over Time']);
-%         xlabel('Time (s)');
-%         ylabel(['A_{' num2str(i) num2str(j) '}']);
-%         grid on;
-%     end
-% end
-% 
-% % Plot the error of the angular velocities (in body frame) of the absolute
-% % angular velocity wrt the LVLH angular velocity
-% figure('Name','Error on w (B wrt LVLH) over time')
-% subplot(3, 1, 1);
-% plot(time, w_B_LVLH(1,:), 'b', 'LineWidth', 1.5);
-% title('Angular Velocity in X Direction');
-% xlabel('Time (s)');
-% ylabel('error on w_x (rad/s)');
-% grid on;
-% subplot(3, 1, 2);
-% plot(time, w_B_LVLH(2,:), 'r', 'LineWidth', 1.5);
-% title('Angular Velocity in Y Direction');
-% xlabel('Time (s)');
-% ylabel('error on w_y (rad/s)');
-% grid on;
-% subplot(3, 1, 3);
-% plot(time, w_B_LVLH(3,:), 'g', 'LineWidth', 1.5);
-% title('Angular Velocity in Z Direction');
-% xlabel('Time (s)');
-% ylabel('error on w_z (rad/s)');
-% grid on;
+%% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
 
-% %% ----------- SATELLITE SCENARIO ----------------
-% 
-% % Conversion a km -> m
-% a = a*1000;         %[m]
-% 
-% % Satellite Scenario 
-% stopTime = startTime + seconds(T);
-% sampleTime = 60;
-% sc = satelliteScenario(startTime,stopTime,sampleTime);
-% viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
-% sat = satellite(sc,a,e,incl,raan,w,theta);
-% show(sat)
-% sat.Visual3DModel = "SmallSat.glb";
-% coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
-% camtarget(viewer, sat);
-% groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
-% play(sc,PlaybackSpeedMultiplier=500)
-% 
-% % Conversion a m -> km
-% a = a/1000;         %[km] 
+
+
+simout = sim('SIM_SAD_DEMO');
+time = simout.tout; 
+A_B_N = simout.A_B_N;
+A_B_N_ortho = simout.A_B_N_ortho;
+A_B_LVLH = simout.A_B_LVLH;
+w_B_LVLH = simout.w_B_LVLH;
+
+
+
+% Pre-allocate Q, error and norm_error
+Q = zeros(3, 3, length(time));
+error = zeros(3, 3, length(time));
+norm_error = zeros(1, length(time));
+
+% Testing Orthonormality of A
+for i = 1:length(time)
+    Q(:,:,i) =A_B_N(:,:,i)'*A_B_N(:,:,i);
+    error(:,:,i) = abs(eye(3)-Q(:,:,i));
+    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+end
+
+% Plot orthonormality error of A
+figure('Name','Orthonormality error of A')
+plot(time, norm_error)
+
+% Testing Orthonormality of A_ortho
+for i = 1:length(time)
+    Q(:,:,i) = A_B_N_ortho(:,:,i)'*A_B_N_ortho(:,:,i);
+    error(:,:,i) = abs(eye(3)-Q(:,:,i));
+    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+end
+
+% Plot orthonormality error of A_ortho
+figure('Name','Orthonormality error of A after orthonormalisation')
+plot(time, norm_error)
+
+% Plot the attitude error between Body Frame and Uniformly rotating LVLH
+% Frame
+figure('Name','Attitude Matrix A_B_LVLH Components over Time');
+for i = 1:3
+    for j = 1:3
+        subplot(3, 3, (i-1)*3 + j);
+        plot(time, squeeze(A_B_LVLH(i, j, :)), 'LineWidth', 1.5);
+        title(['A_{' num2str(i) num2str(j) '} over Time']);
+        xlabel('Time (s)');
+        ylabel(['A_{' num2str(i) num2str(j) '}']);
+        grid on;
+    end
+end
+
+% Plot the error of the angular velocities (in body frame) of the absolute
+% angular velocity wrt the LVLH angular velocity
+figure('Name','Error on w (B wrt LVLH) over time')
+subplot(3, 1, 1);
+plot(time, w_B_LVLH(1,:), 'b', 'LineWidth', 1.5);
+title('Angular Velocity in X Direction');
+xlabel('Time (s)');
+ylabel('error on w_x (rad/s)');
+grid on;
+subplot(3, 1, 2);
+plot(time, w_B_LVLH(2,:), 'r', 'LineWidth', 1.5);
+title('Angular Velocity in Y Direction');
+xlabel('Time (s)');
+ylabel('error on w_y (rad/s)');
+grid on;
+subplot(3, 1, 3);
+plot(time, w_B_LVLH(3,:), 'g', 'LineWidth', 1.5);
+title('Angular Velocity in Z Direction');
+xlabel('Time (s)');
+ylabel('error on w_z (rad/s)');
+grid on;
+
+%% ----------- SATELLITE SCENARIO ----------------
+
+% Conversion a km -> m
+a = a*1000;         %[m]
+
+% Satellite Scenario 
+stopTime = startTime + seconds(T);
+sampleTime = 60;
+sc = satelliteScenario(startTime,stopTime,sampleTime);
+viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
+sat = satellite(sc,a,e,incl,raan,w,theta);
+show(sat)
+sat.Visual3DModel = "SmallSat.glb";
+coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
+camtarget(viewer, sat);
+groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
+play(sc,PlaybackSpeedMultiplier=500)
+
+% Conversion a m -> km
+a = a/1000;         %[km] 
 
 

@@ -2,7 +2,10 @@
 % ONLY SCRIPT / SIMULINK STUFF
 % 1) Cycle for B_IGRF and optimization
 % 2) Ordering Albedo and Earth Radiation Pressure
-
+% 3) Pink noise (Lowpass Filter)
+% 4) Sun synchronous Orbit (and Saturation for Sun-sensor) and Sun Pointing
+% 5) Control
+% 6) Actuators
 
 
 %% ------------ DATA : Earth-S/C ------------
@@ -288,8 +291,8 @@ Magmeter.weight = 1/Magmeter.accuracy;
 Sun_sensor.accuracy = 0.01*pi/180;  % [deg]
 Sun_sensor.weight = 1/Sun_sensor.accuracy;
 
-Magmeter.alpha = Magmeter.weight / (Magmeter.weight + Sun_sensor.weight);
-Sun_sensor.alpha = Sun_sensor.weight / (Magmeter.weight + Sun_sensor.weight);
+Magmeter.alpha = Magmeter.weight / (Magmeter.weight + Sun_sensor.weight); %[-]
+Sun_sensor.alpha = Sun_sensor.weight / (Magmeter.weight + Sun_sensor.weight); %[-]
 
 
 

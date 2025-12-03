@@ -291,103 +291,105 @@ Sun_sensor.weight = 1/Sun_sensor.accuracy;
 Magmeter.alpha = Magmeter.weight / (Magmeter.weight + Sun_sensor.weight);
 Sun_sensor.alpha = Sun_sensor.weight / (Magmeter.weight + Sun_sensor.weight);
 
-
-
-%% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
-
-
-
-simout = sim('SIM_SAD_DEMO');
-time = simout.tout; 
-A_B_N = simout.A_B_N;
-A_B_N_ortho = simout.A_B_N_ortho;
-A_B_LVLH = simout.A_B_LVLH;
-w_B_LVLH = simout.w_B_LVLH;
+q.Ts = max (Sun_sensor.Ts, Magmeter.Ts);
 
 
 
-% Pre-allocate Q, error and norm_error
-Q = zeros(3, 3, length(time));
-error = zeros(3, 3, length(time));
-norm_error = zeros(1, length(time));
+% %% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
+% 
+% 
+% 
+% simout = sim('SIM_SAD_DEMO');
+% time = simout.tout; 
+% A_B_N = simout.A_B_N;
+% A_B_N_ortho = simout.A_B_N_ortho;
+% A_B_LVLH = simout.A_B_LVLH;
+% w_B_LVLH = simout.w_B_LVLH;
+% 
+% 
+% 
+% % Pre-allocate Q, error and norm_error
+% Q = zeros(3, 3, length(time));
+% error = zeros(3, 3, length(time));
+% norm_error = zeros(1, length(time));
+% 
+% % Testing Orthonormality of A
+% for i = 1:length(time)
+%     Q(:,:,i) =A_B_N(:,:,i)'*A_B_N(:,:,i);
+%     error(:,:,i) = abs(eye(3)-Q(:,:,i));
+%     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+% end
+% 
+% % Plot orthonormality error of A
+% figure('Name','Orthonormality error of A')
+% plot(time, norm_error)
+% 
+% % Testing Orthonormality of A_ortho
+% for i = 1:length(time)
+%     Q(:,:,i) = A_B_N_ortho(:,:,i)'*A_B_N_ortho(:,:,i);
+%     error(:,:,i) = abs(eye(3)-Q(:,:,i));
+%     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+% end
+% 
+% % Plot orthonormality error of A_ortho
+% figure('Name','Orthonormality error of A after orthonormalisation')
+% plot(time, norm_error)
+% 
+% % Plot the attitude error between Body Frame and Uniformly rotating LVLH
+% % Frame
+% figure('Name','Attitude Matrix A_B_LVLH Components over Time');
+% for i = 1:3
+%     for j = 1:3
+%         subplot(3, 3, (i-1)*3 + j);
+%         plot(time, squeeze(A_B_LVLH(i, j, :)), 'LineWidth', 1.5);
+%         title(['A_{' num2str(i) num2str(j) '} over Time']);
+%         xlabel('Time (s)');
+%         ylabel(['A_{' num2str(i) num2str(j) '}']);
+%         grid on;
+%     end
+% end
+% 
+% % Plot the error of the angular velocities (in body frame) of the absolute
+% % angular velocity wrt the LVLH angular velocity
+% figure('Name','Error on w (B wrt LVLH) over time')
+% subplot(3, 1, 1);
+% plot(time, w_B_LVLH(1,:), 'b', 'LineWidth', 1.5);
+% title('Angular Velocity in X Direction');
+% xlabel('Time (s)');
+% ylabel('error on w_x (rad/s)');
+% grid on;
+% subplot(3, 1, 2);
+% plot(time, w_B_LVLH(2,:), 'r', 'LineWidth', 1.5);
+% title('Angular Velocity in Y Direction');
+% xlabel('Time (s)');
+% ylabel('error on w_y (rad/s)');
+% grid on;
+% subplot(3, 1, 3);
+% plot(time, w_B_LVLH(3,:), 'g', 'LineWidth', 1.5);
+% title('Angular Velocity in Z Direction');
+% xlabel('Time (s)');
+% ylabel('error on w_z (rad/s)');
+% grid on;
 
-% Testing Orthonormality of A
-for i = 1:length(time)
-    Q(:,:,i) =A_B_N(:,:,i)'*A_B_N(:,:,i);
-    error(:,:,i) = abs(eye(3)-Q(:,:,i));
-    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
-end
-
-% Plot orthonormality error of A
-figure('Name','Orthonormality error of A')
-plot(time, norm_error)
-
-% Testing Orthonormality of A_ortho
-for i = 1:length(time)
-    Q(:,:,i) = A_B_N_ortho(:,:,i)'*A_B_N_ortho(:,:,i);
-    error(:,:,i) = abs(eye(3)-Q(:,:,i));
-    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
-end
-
-% Plot orthonormality error of A_ortho
-figure('Name','Orthonormality error of A after orthonormalisation')
-plot(time, norm_error)
-
-% Plot the attitude error between Body Frame and Uniformly rotating LVLH
-% Frame
-figure('Name','Attitude Matrix A_B_LVLH Components over Time');
-for i = 1:3
-    for j = 1:3
-        subplot(3, 3, (i-1)*3 + j);
-        plot(time, squeeze(A_B_LVLH(i, j, :)), 'LineWidth', 1.5);
-        title(['A_{' num2str(i) num2str(j) '} over Time']);
-        xlabel('Time (s)');
-        ylabel(['A_{' num2str(i) num2str(j) '}']);
-        grid on;
-    end
-end
-
-% Plot the error of the angular velocities (in body frame) of the absolute
-% angular velocity wrt the LVLH angular velocity
-figure('Name','Error on w (B wrt LVLH) over time')
-subplot(3, 1, 1);
-plot(time, w_B_LVLH(1,:), 'b', 'LineWidth', 1.5);
-title('Angular Velocity in X Direction');
-xlabel('Time (s)');
-ylabel('error on w_x (rad/s)');
-grid on;
-subplot(3, 1, 2);
-plot(time, w_B_LVLH(2,:), 'r', 'LineWidth', 1.5);
-title('Angular Velocity in Y Direction');
-xlabel('Time (s)');
-ylabel('error on w_y (rad/s)');
-grid on;
-subplot(3, 1, 3);
-plot(time, w_B_LVLH(3,:), 'g', 'LineWidth', 1.5);
-title('Angular Velocity in Z Direction');
-xlabel('Time (s)');
-ylabel('error on w_z (rad/s)');
-grid on;
-
-%% ----------- SATELLITE SCENARIO ----------------
-
-% Conversion a km -> m
-a = a*1000;         %[m]
-
-% Satellite Scenario 
-stopTime = startTime + seconds(T);
-sampleTime = 60;
-sc = satelliteScenario(startTime,stopTime,sampleTime);
-viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
-sat = satellite(sc,a,e,incl,raan,w,theta);
-show(sat)
-sat.Visual3DModel = "SmallSat.glb";
-coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
-camtarget(viewer, sat);
-groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
-play(sc,PlaybackSpeedMultiplier=500)
-
-% Conversion a m -> km
-a = a/1000;         %[km] 
+% %% ----------- SATELLITE SCENARIO ----------------
+% 
+% % Conversion a km -> m
+% a = a*1000;         %[m]
+% 
+% % Satellite Scenario 
+% stopTime = startTime + seconds(T);
+% sampleTime = 60;
+% sc = satelliteScenario(startTime,stopTime,sampleTime);
+% viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
+% sat = satellite(sc,a,e,incl,raan,w,theta);
+% show(sat)
+% sat.Visual3DModel = "SmallSat.glb";
+% coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
+% camtarget(viewer, sat);
+% groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
+% play(sc,PlaybackSpeedMultiplier=500)
+% 
+% % Conversion a m -> km
+% a = a/1000;         %[km] 
 
 

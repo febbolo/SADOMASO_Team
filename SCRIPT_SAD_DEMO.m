@@ -6,7 +6,7 @@
 % 4) Sun Pointing, Sun synchronous ALMOST DONE?????
 % 5) Control
 % 6) Actuators
-% 7) VALIDATE ATTITUDE DETERMINATION
+
 
 
 %% ------------ DATA : Earth-S/C - Sun synchronous Orbit ------------

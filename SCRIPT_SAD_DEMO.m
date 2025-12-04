@@ -301,6 +301,9 @@ Sun_sensor.alpha = Sun_sensor.weight / (Magmeter.weight + Sun_sensor.weight); %[
 
 q.Ts = max (Sun_sensor.Ts, Magmeter.Ts);
 
+%% ----------- SUN POINTING -----------
+
+
 
 
 %% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
@@ -379,25 +382,25 @@ xlabel('Time (s)');
 ylabel('error on w_z (rad/s)');
 grid on;
 
-%% ----------- SATELLITE SCENARIO ----------------
-
+% %% ----------- SATELLITE SCENARIO ----------------
+% 
 % Conversion a km -> m
-a = a*1000;         %[m]
-
+% a = a*1000;         %[m]
+% 
 % Satellite Scenario 
-stopTime = startTime + seconds(T);
-sampleTime = 60;
-sc = satelliteScenario(startTime,stopTime,sampleTime);
-viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
-sat = satellite(sc,a,e,incl,raan,w,theta);
-show(sat)
-sat.Visual3DModel = "SmallSat.glb";
-coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
-camtarget(viewer, sat);
-groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
-play(sc,PlaybackSpeedMultiplier=500)
-
+% stopTime = startTime + seconds(T);
+% sampleTime = 60;
+% sc = satelliteScenario(startTime,stopTime,sampleTime);
+% viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
+% sat = satellite(sc,a,e,incl,raan,w,theta);
+% show(sat)
+% sat.Visual3DModel = "SmallSat.glb";
+% coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
+% camtarget(viewer, sat);
+% groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
+% play(sc,PlaybackSpeedMultiplier=500)
+% 
 % Conversion a m -> km
-a = a/1000;         %[km] 
+% a = a/1000;         %[km] 
 
 

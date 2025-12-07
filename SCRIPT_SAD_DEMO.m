@@ -7,8 +7,6 @@
 % 5) Control
 % 6) Actuators
 
-
-
 %% ------------ DATA : Earth-S/C - Sun synchronous Orbit ------------
 
 clear

@@ -306,81 +306,81 @@ q.Ts = min(q.maxsensor, Dt);
 
 
 
-%% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
-
-
-
-simout = sim('SIM_SAD_DEMO');
-time = simout.tout; 
-A_B_N = simout.A_B_N;
-A_B_N_ortho = simout.A_B_N_ortho;
-A_B_LVLH = simout.A_B_LVLH;
-w_B_LVLH = simout.w_B_LVLH;
-
-
-
-% Pre-allocate Q, error and norm_error
-Q = zeros(3, 3, length(time));
-error = zeros(3, 3, length(time));
-norm_error = zeros(1, length(time));
-
-% Testing Orthonormality of A
-for i = 1:length(time)
-    Q(:,:,i) =A_B_N(:,:,i)'*A_B_N(:,:,i);
-    error(:,:,i) = abs(eye(3)-Q(:,:,i));
-    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
-end
-
-% Plot orthonormality error of A
-figure('Name','Orthonormality error of A')
-plot(time, norm_error)
-
-% Testing Orthonormality of A_ortho
-for i = 1:length(time)
-    Q(:,:,i) = A_B_N_ortho(:,:,i)'*A_B_N_ortho(:,:,i);
-    error(:,:,i) = abs(eye(3)-Q(:,:,i));
-    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
-end
-
-% Plot orthonormality error of A_ortho
-figure('Name','Orthonormality error of A after orthonormalisation')
-plot(time, norm_error)
-
-% Plot the attitude error between Body Frame and Uniformly rotating LVLH
-% Frame
-figure('Name','Attitude Matrix A_B_LVLH Components over Time');
-for i = 1:3
-    for j = 1:3
-        subplot(3, 3, (i-1)*3 + j);
-        plot(time, squeeze(A_B_LVLH(i, j, :)), 'LineWidth', 1.5);
-        title(['A_{' num2str(i) num2str(j) '} over Time']);
-        xlabel('Time (s)');
-        ylabel(['A_{' num2str(i) num2str(j) '}']);
-        grid on;
-    end
-end
-
-% Plot the error of the angular velocities (in body frame) of the absolute
-% angular velocity wrt the LVLH angular velocity
-figure('Name','Error on w (B wrt LVLH) over time')
-subplot(3, 1, 1);
-plot(time, w_B_LVLH(1,:), 'b', 'LineWidth', 1.5);
-title('Angular Velocity in X Direction');
-xlabel('Time (s)');
-ylabel('error on w_x (rad/s)');
-grid on;
-subplot(3, 1, 2);
-plot(time, w_B_LVLH(2,:), 'r', 'LineWidth', 1.5);
-title('Angular Velocity in Y Direction');
-xlabel('Time (s)');
-ylabel('error on w_y (rad/s)');
-grid on;
-subplot(3, 1, 3);
-plot(time, w_B_LVLH(3,:), 'g', 'LineWidth', 1.5);
-title('Angular Velocity in Z Direction');
-xlabel('Time (s)');
-ylabel('error on w_z (rad/s)');
-grid on;
+% %% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
+% 
+% 
+% 
+% simout = sim('SIM_SAD_DEMO');
+% time = simout.tout; 
+% A_B_N = simout.A_B_N;
+% A_B_N_ortho = simout.A_B_N_ortho;
+% A_B_LVLH = simout.A_B_LVLH;
+% w_B_LVLH = simout.w_B_LVLH;
+% 
+% 
+% 
+% % Pre-allocate Q, error and norm_error
+% Q = zeros(3, 3, length(time));
+% error = zeros(3, 3, length(time));
+% norm_error = zeros(1, length(time));
+% 
+% % Testing Orthonormality of A
+% for i = 1:length(time)
+%     Q(:,:,i) =A_B_N(:,:,i)'*A_B_N(:,:,i);
+%     error(:,:,i) = abs(eye(3)-Q(:,:,i));
+%     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+% end
+% 
+% % Plot orthonormality error of A
+% figure('Name','Orthonormality error of A')
+% plot(time, norm_error)
+% 
+% % Testing Orthonormality of A_ortho
+% for i = 1:length(time)
+%     Q(:,:,i) = A_B_N_ortho(:,:,i)'*A_B_N_ortho(:,:,i);
+%     error(:,:,i) = abs(eye(3)-Q(:,:,i));
+%     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+% end
+% 
+% % Plot orthonormality error of A_ortho
+% figure('Name','Orthonormality error of A after orthonormalisation')
+% plot(time, norm_error)
+% 
+% % Plot the attitude error between Body Frame and Uniformly rotating LVLH
+% % Frame
+% figure('Name','Attitude Matrix A_B_LVLH Components over Time');
+% for i = 1:3
+%     for j = 1:3
+%         subplot(3, 3, (i-1)*3 + j);
+%         plot(time, squeeze(A_B_LVLH(i, j, :)), 'LineWidth', 1.5);
+%         title(['A_{' num2str(i) num2str(j) '} over Time']);
+%         xlabel('Time (s)');
+%         ylabel(['A_{' num2str(i) num2str(j) '}']);
+%         grid on;
+%     end
+% end
+% 
+% % Plot the error of the angular velocities (in body frame) of the absolute
+% % angular velocity wrt the LVLH angular velocity
+% figure('Name','Error on w (B wrt LVLH) over time')
+% subplot(3, 1, 1);
+% plot(time, w_B_LVLH(1,:), 'b', 'LineWidth', 1.5);
+% title('Angular Velocity in X Direction');
+% xlabel('Time (s)');
+% ylabel('error on w_x (rad/s)');
+% grid on;
+% subplot(3, 1, 2);
+% plot(time, w_B_LVLH(2,:), 'r', 'LineWidth', 1.5);
+% title('Angular Velocity in Y Direction');
+% xlabel('Time (s)');
+% ylabel('error on w_y (rad/s)');
+% grid on;
+% subplot(3, 1, 3);
+% plot(time, w_B_LVLH(3,:), 'g', 'LineWidth', 1.5);
+% title('Angular Velocity in Z Direction');
+% xlabel('Time (s)');
+% ylabel('error on w_z (rad/s)');
+% grid on;
 
 % %% ----------- SATELLITE SCENARIO ----------------
 % 

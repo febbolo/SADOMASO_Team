@@ -265,7 +265,7 @@ Sun_sensor.FOV = [-60 60]; %[deg]
 Sun_sensor.lat = 1;      %[sample]
 
 % Magnetometer : BOSCH BMM350DS-001
-Magmeter.f = 5;         %Sampling frequency [Hz]
+Magmeter.f = 10;         %Sampling frequency [Hz]
 Magmeter.Ts = 1/Magmeter.f; %Sampling time [s]
 Magmeter.O = [1, deg2rad(0.1), -deg2rad(0.1);
                 -deg2rad(0.1), 1, deg2rad(0.1);

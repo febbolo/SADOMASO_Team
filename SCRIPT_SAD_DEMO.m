@@ -1,9 +1,8 @@
 %% -------------- TO DO -----------------
 % ONLY SCRIPT / SIMULINK STUFF
 % 1) Cycle for B_IGRF and optimization
-% 2) Ordering Albedo and Earth Radiation Pressure
-% 3) Pink noise (Lowpass Filter)
-% 4) Sun Pointing, Sun synchronous ALMOST DONE?????
+% 2) (Ordering Albedo and Earth Radiation Pressure)
+% 3) Pink noise (Lowpass Filter) NOT DOING MAYBE
 % 5) Control
 % 6) Actuators
 
@@ -301,7 +300,20 @@ Dt = str2double(get_param('SIM_SAD_DEMO','FixedStep'));
 q.maxsensor = min(Sun_sensor.Ts, Magmeter.Ts);
 q.Ts = min(q.maxsensor, Dt);
 
-%% ----------- SUN POINTING -----------
+%% ----------- CONTROL : LQR/POLE PLACEMENT ----------
+
+
+
+
+%% ------------ ACTUATORS -----------------
+
+
+
+
+
+
+
+
 
 
 

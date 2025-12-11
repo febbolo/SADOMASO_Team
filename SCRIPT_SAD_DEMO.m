@@ -284,6 +284,68 @@ Magmeter.SFNx = 2.5; % Scale factor Nonlinearity on x [1/T]
 Magmeter.SFNy = 2.5; % Scale factor Nonlinearity on y [1/T]
 Magmeter.SFNz = 5; % Scale factor Nonlinearity on z [1/T]
 
+%% Gyroscope
+
+% siccome tanto non posso aggiornare più rapidamente lo stato di come usi
+% fare con un sun-sensor a 5HZ, anche se teoricamente il gyro gira a 200Hz
+% tipo lo metto a 10 HZ
+
+gyro.frequency = 10;
+
+
+% Full scale per il saturation è circa di +- 250 deg/sec
+gyro.Ts = 1 / gyro.frequency;  % Calculate the sampling time based on frequency
+
+% Full scale range
+gyro.half_scale_range = 250;  % Full scale range in deg/sec
+gyro.full_range_scale = gyro.half_scale_range*2;
+
+% numero di bit della scheda
+gyro.n_bit = 16 ; % numero d bit
+
+
+% non linearity, in percentage (0.001 * value)
+gyro.non_linearity = 0.1;
+
+% noise density gyro
+gyro.noise_density = 0.002;  % Noise density
+
+% Bias error
+gyro.bias = 1;  % deg bias gyro
+
+%  gyro.bias_instability = 4; % deg
+gyro.scale_factor = [0.003, 0.004, 0.002]; % scale factor percentuali
+
+
+%gyro.ctime per il feedback nel noise legato ad allance variance (brown)
+gyro.ctime = 125; %secondi, da letteratura standard per cubesat mems
+
+% misalignement angles
+gyro.alpha = deg2rad(0.8);
+gyro.beta = deg2rad(0.5);
+gyro.gamma = deg2rad(0.9);
+
+% misalignement rotation around x
+gyro.misalignement_x = [1 0 0; 0 cos(gyro.alpha) -sin(gyro.alpha); 0 sin(gyro.alpha) cos(gyro.alpha)];
+
+% misalignement rotation around y
+gyro.misalignement_y = [cos(gyro.beta) 0 sin(gyro.beta); 0 1 0; -sin(gyro.beta) 0 cos(gyro.beta)];
+
+% misalignement rotation around z
+gyro.misalignement_z = [cos(gyro.gamma) -sin(gyro.gamma) 0; sin(gyro.gamma) cos(gyro.gamma) 0; 0 0 1];
+
+% Misalignement values 
+gyro.misalignement = gyro.misalignement_x * gyro.misalignement_y * gyro.misalignement_z;
+
+% I define the non orthogonality matrix
+gyro.non_orthogonality = [1 deg2rad(0.002) deg2rad(0.0025); deg2rad(0.001) 1 deg2rad(0.0022); deg2rad(0.0018) deg2rad(0.002) 1];
+
+% delay tendenzialmente di circa 2/4 ms dovuto ad alto numero di sample,
+% per il nostro modello utilizzeremo o 1 singolo valore per il delay, cioè
+% quello prcedente, oppure semplicemente ha più senso non inserirlo il
+% delay
+gyro.delay = 0;
+
 
 %% ------------- ATTITUDE DETERMINATION : q-method ----------
 
@@ -305,11 +367,11 @@ q.Ts = min(q.maxsensor, Dt);
 % B = ; % Froma state space model
 % x_max = [ , , , , , ]; % Maximum values that each sstate component can assume
 % u_max = [ , , , , , ];
-Q = diag(1./x_max); 
-R = diag(1./u_max); 
-% Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
-% algebraic Riccati equation 
-[K,S,P] = dlqr(A,B,Q,R,N); % Discrete - time implementation            
+% Q = diag(1./x_max); 
+% R = diag(1./u_max); 
+% % Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
+% % algebraic Riccati equation 
+% [K,S,P] = dlqr(A,B,Q,R,N); % Discrete - time implementation            
 
 
 

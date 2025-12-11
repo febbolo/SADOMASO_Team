@@ -300,7 +300,16 @@ Dt = str2double(get_param('SIM_SAD_DEMO','FixedStep'));
 q.maxsensor = min(Sun_sensor.Ts, Magmeter.Ts);
 q.Ts = min(q.maxsensor, Dt);
 
-%% ----------- CONTROL : LQR/POLE PLACEMENT ----------
+%% ----------- CONTROL : LQR ----------
+% A = ; % From state space model
+% B = ; % Froma state space model
+% x_max = [ , , , , , ]; % Maximum values that each sstate component can assume
+% u_max = [ , , , , , ];
+Q = diag(1./x_max); 
+R = diag(1./u_max); 
+% Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
+% algebraic Riccati equation 
+[K,S,P] = dlqr(A,B,Q,R,N); % Discrete - time implementation            
 
 
 

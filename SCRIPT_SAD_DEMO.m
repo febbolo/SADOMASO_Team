@@ -48,7 +48,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0; 0; n];  %[rad/s]
+w0 = [0.01; 0.01; 0.01];  %[rad/s]
 % w0 = [1e-6; 1e-6; n];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
@@ -66,10 +66,10 @@ n_sun = 2*pi/T_sun;         %[rad/s]
 eps_E = deg2rad(astroConstants(63)); %[rad]
 
 % Astronomic unit
-ua = astroConstants(2);   %[km]
+AU = astroConstants(2);   %[km]
 
 % Distance of the Sun
-r_sun = 1*ua;       %[km]
+r_sun = 1*AU;       %[km]
 
 
 
@@ -197,6 +197,8 @@ K_yaw = (I_moments(3)-I_moments(2))/I_moments(1)
 K_roll = (I_moments(3)-I_moments(1))/I_moments(2)
 K_pitch = (I_moments(2)-I_moments(1))/I_moments(3)
 
+
+% STABILITY CONDITIONS HERE ARE FOR NADIR POINTING CASE MAYBE : VERIFY!!!!
 % Verify Stability conditions
 if((K_roll*K_yaw>0) && ( (1+3*K_roll+K_roll*K_yaw)^2 > 16*K_yaw*K_roll) )
     disp('Stability conditions are satisfied.');
@@ -284,67 +286,50 @@ Magmeter.SFNx = 2.5; % Scale factor Nonlinearity on x [1/T]
 Magmeter.SFNy = 2.5; % Scale factor Nonlinearity on y [1/T]
 Magmeter.SFNz = 5; % Scale factor Nonlinearity on z [1/T]
 
-%% Gyroscope
-
-% siccome tanto non posso aggiornare più rapidamente lo stato di come usi
-% fare con un sun-sensor a 5HZ, anche se teoricamente il gyro gira a 200Hz
-% tipo lo metto a 10 HZ
-
-gyro.frequency = 10;
-
-
-% Full scale per il saturation è circa di +- 250 deg/sec
-gyro.Ts = 1 / gyro.frequency;  % Calculate the sampling time based on frequency
-
+% Gyroscope
+Gyro.f = 10; %[Hz]
+% Full scale range +- 250 deg/s
+Gyro.Ts = 1 / Gyro.f;  % Calculate the sampling time based on frequency
 % Full scale range
-gyro.half_scale_range = 250;  % Full scale range in deg/sec
-gyro.full_range_scale = gyro.half_scale_range*2;
-
-% numero di bit della scheda
-gyro.n_bit = 16 ; % numero d bit
-
-
-% non linearity, in percentage (0.001 * value)
-gyro.non_linearity = 0.1;
-
-% noise density gyro
-gyro.noise_density = 0.002;  % Noise density
-
+Gyro.half_scale_range = 250;  % Full scale range in deg/s
+Gyro.FS = Gyro.half_scale_range*2;
+Gyro.AD_nbit = 16 ;
+% Nonlinearity, in percentage (0.001 * value)
+Gyro.NL = 0.1;
+% Noise Density Gyro
+Gyro.D = 0.0028;  % Noise density [1deg/s/sqrt(Hz)]
 % Bias error
-gyro.bias = 1;  % deg bias gyro
-
-%  gyro.bias_instability = 4; % deg
-gyro.scale_factor = [0.003, 0.004, 0.002]; % scale factor percentuali
-
-
-%gyro.ctime per il feedback nel noise legato ad allance variance (brown)
-gyro.ctime = 125; %secondi, da letteratura standard per cubesat mems
-
-% misalignement angles
-gyro.alpha = deg2rad(0.8);
-gyro.beta = deg2rad(0.5);
-gyro.gamma = deg2rad(0.9);
-
-% misalignement rotation around x
-gyro.misalignement_x = [1 0 0; 0 cos(gyro.alpha) -sin(gyro.alpha); 0 sin(gyro.alpha) cos(gyro.alpha)];
-
-% misalignement rotation around y
-gyro.misalignement_y = [cos(gyro.beta) 0 sin(gyro.beta); 0 1 0; -sin(gyro.beta) 0 cos(gyro.beta)];
-
-% misalignement rotation around z
-gyro.misalignement_z = [cos(gyro.gamma) -sin(gyro.gamma) 0; sin(gyro.gamma) cos(gyro.gamma) 0; 0 0 1];
-
-% Misalignement values 
-gyro.misalignement = gyro.misalignement_x * gyro.misalignement_y * gyro.misalignement_z;
-
-% I define the non orthogonality matrix
-gyro.non_orthogonality = [1 deg2rad(0.002) deg2rad(0.0025); deg2rad(0.001) 1 deg2rad(0.0022); deg2rad(0.0018) deg2rad(0.002) 1];
-
-% delay tendenzialmente di circa 2/4 ms dovuto ad alto numero di sample,
-% per il nostro modello utilizzeremo o 1 singolo valore per il delay, cioè
-% quello prcedente, oppure semplicemente ha più senso non inserirlo il
-% delay
-gyro.delay = 0;
+Gyro.b = 0.5;  %[deg/s] Bias gyro
+% Scale Factor Nonlinearity (percentage)
+Gyro.SFN = [0.003, 0.004, 0.002]; 
+% Correlation Time for Allan variance (bias instability, Brown Noise)
+Gyro.ctime = 125; % [s], from literature for cubesat MEMS
+% Misalignement angles
+Gyro.alpha = deg2rad(0.8); %[rad]
+Gyro.beta = deg2rad(0.5);  %[rad]
+Gyro.gamma = deg2rad(0.9); %[rad]
+% Misalignement rotation matrix around x
+Gyro.Rx= [1, 0, 0;...
+          0, cos(Gyro.alpha), sin(Gyro.alpha);...
+          0, -sin(Gyro.alpha), cos(Gyro.alpha)];
+% Misalignement rotation matrix around y
+Gyro.Ry = [cos(Gyro.beta), 0, sin(Gyro.beta);...
+            0, 1, 0;... 
+           -sin(Gyro.beta), 0, cos(Gyro.beta)];
+% Misalignement rotation matrix around z
+Gyro.Rz = [cos(Gyro.gamma), sin(Gyro.gamma), 0;...
+           -sin(Gyro.gamma), cos(Gyro.gamma) 0;...
+           0, 0, 1];
+% Misalignement DCM Error Matrix [rad]
+Gyro.R = Gyro.Rx * Gyro.Ry* Gyro.Rz;
+% Non Orthogonality Error Matrix [rad]
+Gyro.O = [1, deg2rad(0.002), deg2rad(0.0025);...
+          deg2rad(0.001), 1, deg2rad(0.0022);...
+          deg2rad(0.0018), deg2rad(0.002), 1];
+% Gyro Delay (neglected since very small)
+Gyro.delay = 0;
+% Gyro LSB 
+Gyro.LSB = Gyro.FS / (2^Gyro.AD_nbit);
 
 
 %% ------------- ATTITUDE DETERMINATION : q-method ----------

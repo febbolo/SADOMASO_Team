@@ -347,6 +347,21 @@ Dt = str2double(get_param('SIM_SAD_DEMO','FixedStep'));
 q.maxsensor = min(Sun_sensor.Ts, Magmeter.Ts);
 q.Ts = min(q.maxsensor, Dt);
 
+%% --------------- FILTER --------------------------
+
+% i define the parameters to build the butterworth filter
+
+Fs = 5;          % Frequenza campionamento = 5 Hz
+Fc = 1;            % Frequenza di taglio desiderata (in Hz) → la puoi cambiare
+order = 6;           % Ordine del filtro → 1 o 2
+
+[bvec,avec] = butter(order, Fc/(Fs/2));   % Progetta filtro digitale
+
+bvec;   % Numeratore
+avec;   % Denominatore
+
+
+
 %% ----------- CONTROL : LQR ----------
 % A = ; % From state space model
 % B = ; % Froma state space model

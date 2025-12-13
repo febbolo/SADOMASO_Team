@@ -48,7 +48,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.01; 0.01; 0.01];  %[rad/s]
+w0 = [0.03; 0.03; 0.02];  %[rad/s]
 % w0 = [1e-6; 1e-6; n];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
@@ -286,7 +286,7 @@ Magmeter.SFNx = 2.5; % Scale factor Nonlinearity on x [1/T]
 Magmeter.SFNy = 2.5; % Scale factor Nonlinearity on y [1/T]
 Magmeter.SFNz = 5; % Scale factor Nonlinearity on z [1/T]
 
-% Gyroscope
+% Gyroscope 
 Gyro.f = 10; %[Hz]
 % Full scale range +- 250 deg/s
 Gyro.Ts = 1 / Gyro.f;  % Calculate the sampling time based on frequency
@@ -299,7 +299,7 @@ Gyro.NL = 0.1;
 % Noise Density Gyro
 Gyro.D = 0.0028;  % Noise density [1deg/s/sqrt(Hz)]
 % Bias error
-Gyro.b = 0.5;  %[deg/s] Bias gyro
+Gyro.b = 0.05;  %[deg/s] Bias gyro
 % Scale Factor Nonlinearity (percentage)
 Gyro.SFN = [0.003, 0.004, 0.002]; 
 % Correlation Time for Allan variance (bias instability, Brown Noise)
@@ -326,7 +326,7 @@ Gyro.R = Gyro.Rx * Gyro.Ry* Gyro.Rz;
 Gyro.O = [1, deg2rad(0.002), deg2rad(0.0025);...
           deg2rad(0.001), 1, deg2rad(0.0022);...
           deg2rad(0.0018), deg2rad(0.002), 1];
-% Gyro Delay (neglected since very small)
+% Gyro Delay (neglected since very very small)
 Gyro.delay = 0;
 % Gyro LSB 
 Gyro.LSB = Gyro.FS / (2^Gyro.AD_nbit);
@@ -349,29 +349,86 @@ q.Ts = min(q.maxsensor, Dt);
 
 %% --------------- FILTER --------------------------
 
-% i define the parameters to build the butterworth filter
+% Filtering in the AD in order to not accumulate errors on control
 
-Fs = 5;          % Frequenza campionamento = 5 Hz
-Fc = 1;            % Frequenza di taglio desiderata (in Hz) → la puoi cambiare
-order = 6;           % Ordine del filtro → 1 o 2
+% GYROSCOPE FILTER
+% Sampling time : Ts = 0.1 s
+% Sampling frequency : fc = 1/Ts = 10 Hz
+% In rad/s : omega_c = 10 Hz * 2pi = 62.8 rad/s
+% Nyquist frequency in rad/s : omega_N <= omega_c/2 : omega_N = 31.4 rad/s
+% Frequency of cut-off (taglio) : omega_t = omega_N / k, k simulates the
+% real filter and security factor . k = 2 
+% --> omega_t = 15.7 rad/s
 
-[bvec,avec] = butter(order, Fc/(Fs/2));   % Progetta filtro digitale
+% Define a varying cutoff frequency for different phasis of mission
+% For detumbling, high angular velocities --> conservative cutoff freq
+Filter.DETUMBLING.omega_t = 10; %[rad/s]
+% For pointing, small or almost null angular velocities --> more aggressive
+% cutoff frequency to try to avoid all noises and disturbances
+Filter.POINTING.omega_t = 1; %[rad/s]
 
-bvec;   % Numeratore
-avec;   % Denominatore
-
-
+% The OBC tries to identify the phases of the mission setting a treshold on
+% the angular velocities : as a limit 2-3 deg/s can be considered tumbling
+% In rad/s : 3*pi/180 = 0.05
+% If the maximum angular rate component detected is above the treshold : satellite is
+% tumbling, otherwise can be considered as slew-pointing phase
 
 %% ----------- CONTROL : LQR ----------
-% A = ; % From state space model
-% B = ; % Froma state space model
-% x_max = [ , , , , , ]; % Maximum values that each sstate component can assume
-% u_max = [ , , , , , ];
-% Q = diag(1./x_max); 
-% R = diag(1./u_max); 
-% % Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
-% % algebraic Riccati equation 
-% [K,S,P] = dlqr(A,B,Q,R,N); % Discrete - time implementation            
+
+% From state space model
+A = [0, 0, 0, 0, 0, 0;...
+     0, 0, 0, 0, 0, 0;...
+     0, 0, 0, 0, 0, 0;...
+     0, 0, 1, 0, 0, 0;...
+     1, 0, 0, 0, 0, 0;...
+     0, 1, 0, 0, 0, 0];
+ % From state space model
+B = [1/J_depl(1), 0, 0;...
+     0, 1/J_depl(5), 0;...
+     0, 0, 1/J_depl(9);...
+     0, 0, 0;...
+     0, 0, 0;...
+     0, 0, 0];
+
+% Checking controllability 
+C = ctrb(A,B);
+% Display the rank of matrix C
+rank_C = rank(C);
+disp(['The rank of matrix C is: ', num2str(rank_C),', equal to the number of states.' ...
+    ' So the system is controllable.']);
+
+% Important : we cannot consider the magnetic field for the optimal
+% control due to the absence of an analytical expression for B_mag, which also 
+% varies with time --> B matrix should be constant
+% So : double architecture : 
+% 1) De-tumbling phase with magnetorquers: - high angular velocities, RW not
+%                                            efficient and Magnetorquers
+%                                            inefficiency is neglected
+%                                          - B_dot method very often used
+%                                          for LEO orbits
+% 2) Slew-manouvre/Pointing phase with RW : - LQR optimal control
+%                                           - small angular velocities, RW
+%                                           very efficient
+
+
+% Bryson Method to define Q,R
+alpha_max = deg2rad(10); %[rad]
+% Since 2-3 deg/s could be considered tumbling we want to be under that
+% range
+omega_max = deg2rad(2); %[rad]
+
+% Defining maximum torque for RW:  TO BE DEFINED!!!
+M_RW_max = 3e-3; %[Nm]
+
+x_max = [omega_max, omega_max, omega_max, alpha_max, alpha_max, alpha_max]; 
+u_max = [M_RW_max, M_RW_max, M_RW_max];
+
+Q = diag(1./(x_max).^2); 
+R = diag(1./(u_max).^2);
+
+% Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
+% algebraic Riccati equation 
+[K,S,P] = lqr(A,B,Q,R);          
 
 
 

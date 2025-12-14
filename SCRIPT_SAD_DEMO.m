@@ -428,7 +428,7 @@ R = diag(1./(u_max).^2);
 
 % Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
 % algebraic Riccati equation 
-[K,S,P] = lqr(A,B,Q,R);          
+[K,S,P] = dlqr(A,B,Q,R);          
 
 
 

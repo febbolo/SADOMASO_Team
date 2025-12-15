@@ -13,12 +13,13 @@ clc
 close all
 
 % S/C Inertia 
-J_depl = [100.9, 0, 0;...
-          0, 25.1, 0;...
-          0, 0, 91.6]*1e-2; %kg*m^2
-% J_depl = [8, 0, 0;...
-%           0, 4, 0;...
-%           0, 0, 6]*1e-2; %kg*m^2
+% J_depl = [100.9, 0, 0;...
+%           0, 25.1, 0;...
+%           0, 0, 91.6]*1e-2; %kg*m^2
+% 6U CubeSat inertia
+J_depl = [18, 0, 0;...
+          0, 12, 0;...
+          0, 0, 22]*1e-2; %kg*m^2
 
 % Constants
 G = 6.67e-20; % [km^3/(kg*s^2)]
@@ -48,7 +49,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.03; 0.03; 0.02];  %[rad/s]
+w0 = [0.5; 0.1; 0.1];  %[rad/s]
 % w0 = [1e-6; 1e-6; n];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
@@ -299,9 +300,7 @@ Gyro.NL = 0.1;
 % Noise Density Gyro
 Gyro.D = 0.0028;  % Noise density [1deg/s/sqrt(Hz)]
 % Bias error
-Gyro.b = 0.05;  %[deg/s] Bias gyro
-% Scale Factor Nonlinearity (percentage)
-Gyro.SFN = [0.003, 0.004, 0.002]; 
+Gyro.b = 0.05;  %[deg/s] Bias gyro 
 % Correlation Time for Allan variance (bias instability, Brown Noise)
 Gyro.ctime = 125; % [s], from literature for cubesat MEMS
 % Misalignement angles
@@ -347,7 +346,7 @@ Dt = str2double(get_param('SIM_SAD_DEMO','FixedStep'));
 q.maxsensor = min(Sun_sensor.Ts, Magmeter.Ts);
 q.Ts = min(q.maxsensor, Dt);
 
-%% --------------- FILTER --------------------------
+% --------------- FILTER ON GYROSCOPE --------------------------
 
 % Filtering in the AD in order to not accumulate errors on control
 
@@ -410,17 +409,31 @@ disp(['The rank of matrix C is: ', num2str(rank_C),', equal to the number of sta
 %                                           - small angular velocities, RW
 %                                           very efficient
 
+% DEFINING THRESHOLDS FOR THE DIFFERENT CASES 
+Control.w_tumbling = deg2rad(2); % Treshold for tumbling, [rad]
+Control.w_pointing = 0.1;     % Treshold for slew manouvre, [rad]
+% In the middle we have slew manouvre 
+
+% ------------ DE-TUMBLING ---------------
+% B_dot method
+% B_dot_m = -w_est x B_m
+% D_required = -k_b*B_dot_m
+% M_c = D_required x B = (-k_b*B_dot_m) x B_m
+
+% Gain of the B_dot : TUNING  
+k_b = 200000;
+
+% -------- SLEW / POINTING -------------
 
 % Bryson Method to define Q,R
+% Arbitrary choice of maximum acceptable error
 alpha_max = deg2rad(10); %[rad]
 % Since 2-3 deg/s could be considered tumbling we want to be under that
 % range
-omega_max = deg2rad(2); %[rad]
-
 % Defining maximum torque for RW:  TO BE DEFINED!!!
 M_RW_max = 3e-3; %[Nm]
 
-x_max = [omega_max, omega_max, omega_max, alpha_max, alpha_max, alpha_max]; 
+x_max = [Control.w_tumbling, Control.w_tumbling, Control.w_tumbling, alpha_max, alpha_max, alpha_max]; 
 u_max = [M_RW_max, M_RW_max, M_RW_max];
 
 Q = diag(1./(x_max).^2); 
@@ -429,7 +442,6 @@ R = diag(1./(u_max).^2);
 % Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
 % algebraic Riccati equation 
 [K,S,P] = dlqr(A,B,Q,R);          
-
 
 
 

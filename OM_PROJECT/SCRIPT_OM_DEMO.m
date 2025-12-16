@@ -2,6 +2,9 @@ clear
 close all
 clc
 
+
+
+
 % data from Lab Assignement
 
 % Group number: 2519

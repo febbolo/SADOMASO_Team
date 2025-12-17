@@ -42,6 +42,7 @@ clc
 
 %% --------------- ASSIGNMENT 1 ---------------
 
+% --------- LEG 1 --------
 % Defining a struct containing all the data of the LEG1
 LEG1.Data.mu_sun = astroConstants(4); %[km^3/s^2]
 LEG1.Data.dep_planet = 4; % uplanet ID Mars
@@ -51,12 +52,11 @@ LEG1.TimeWindow.Departure = [datetime(2030,1,1,0,0,0); datetime(2060,1,1,0,0,0)]
 LEG1.TimeWindow.Departure_v = [2030,1,1,0,0,0; 2060,1,1,0,0,0];
 LEG1.TimeWindow.Arrival = [datetime(2030,1,1,0,0,0); datetime(2060,1,1,0,0,0)];
 LEG1.TimeWindow.Arrival_v = [2030,1,1,0,0,0; 2060,1,1,0,0,0];
-% Eventual constraint on v_launch : ASK FOR THE VALUE
-% For now, UNCONSTRAINED VALUE
+% Eventual constraint on v_launch : UNCONSTRAINED
 LEG1.Data.v_launch = inf; %[km/s]
 
 % Computing the DeltaV of the first leg 
-time_step_case = 6; % 1 time step each 7 days
+time_step_case = 7; % 1 time step each 14 days
 [LEG1] = deltaV_mission(LEG1,time_step_case);
 % Refine solution using fmincon : initial guess is the one contained in the
 % MostEfficient field of LEG1
@@ -65,6 +65,32 @@ x0 = [LEG1.MostEfficient.t1, LEG1.MostEfficient.t2];
 
 % Minimum deltaV transfer for LEG1
 disp(LEG1.MostEfficient);
+
+
+% ------- LEG 2 ----------
+% Defining a struct containing all the data of the LEG1
+LEG2.Data.mu_sun = astroConstants(4); %[km^3/s^2]
+LEG2.Data.dep_planet = 3; % uplanet ID Earth
+LEG2.Data.target_asteroid = 470864; % uplanet ID Earth
+% ARBITRARLY CHOOSE THE DATES FOR NOW
+LEG2.TimeWindow.Departure = [datetime(2030,1,1,0,0,0); datetime(2060,1,1,0,0,0)];
+LEG2.TimeWindow.Departure_v = [2030,1,1,0,0,0; 2060,1,1,0,0,0];
+LEG2.TimeWindow.Arrival = [datetime(2030,1,1,0,0,0); datetime(2060,1,1,0,0,0)];
+LEG2.TimeWindow.Arrival_v = [2030,1,1,0,0,0; 2060,1,1,0,0,0];
+% Eventual constraint on v_launch : UNCONSTRAINED
+LEG2.Data.v_launch = inf; %[km/s]
+
+% Computing the DeltaV of the first leg 
+time_step_case = 7; % 1 time step each 14 days
+[LEG2] = deltaV_mission_asteroid(LEG2,time_step_case);
+% Refine solution using fmincon : initial guess is the one contained in the
+% MostEfficient field of LEG1
+x0 = [LEG2.MostEfficient.t1, LEG2.MostEfficient.t2];
+[LEG2, ~, ~, exitflag, ~] = deltaV_mission_fmincon_asteroid(LEG2, x0);
+
+% Minimum deltaV transfer for LEG
+disp(LEG2.MostEfficient);
+
 
 %% -------------- PLOTS : ASSIGNMENT 1 -----------------
 

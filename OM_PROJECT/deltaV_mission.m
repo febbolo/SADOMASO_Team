@@ -17,8 +17,8 @@ function [MISSION] = deltaV_mission(MISSION,time_step_case)
 %                           3 : each time step = 30 minutes 
 %                           4 : each time step = 1 hour 
 %                           5 : each time step = 1 day
-%                           6 : eacht time step = 7 day
-%                           7 : eacht time step = 14 days
+%                           6 : each time step = 7 day
+%                           7 : each time step = 14 days
 
 % OUPTUTS : MISSION : The struct is returned with the added solution of the
 %                     Lambert problem with the 2 degrees of freedom of
@@ -112,7 +112,7 @@ for ii = 1:length(t1_v)
     for jj = 1:length(t2_v)
         if(t2_v(jj) > t1_v(ii)) % Checking that arrival date is AFTER departure date
         
-        % Compute ephemerides of the second orbit (arriival), depending on
+        % Compute ephemerides of the second orbit (arrival), depending on
         % time t2
         [eph2,~] = uplanet(t2_v(jj), MISSION.Data.target_planet);
         % Converting radiants in degrees
@@ -122,7 +122,7 @@ for ii = 1:length(t1_v)
        % Extract position and velocity vector at the final orbit (arrival)
         r_t2 = s2(1:3);     
         v_t2 = s2(4:6);
-
+        
         % Computing Time of Flight (ToF) 
         deltaT = seconds(days(t2_v(jj) - t1_v(ii)));
         

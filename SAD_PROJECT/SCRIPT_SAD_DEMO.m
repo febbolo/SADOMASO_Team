@@ -423,7 +423,7 @@ Control.w_pointing = 0.1;     % Treshold for slew manouvre, [rad]
 % Gain of the B_dot : TUNING  
 k_b = 200000;
 
-% -------- SLEW / POINTING -------------
+% -------- SLEW / RE-POINTING -------------
 
 % Bryson Method to define Q,R
 % Arbitrary choice of maximum acceptable error
@@ -438,10 +438,26 @@ u_max = [M_RW_max, M_RW_max, M_RW_max];
 
 Q = diag(1./(x_max).^2); 
 R = diag(1./(u_max).^2);
-
+   
 % Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
 % algebraic Riccati equation 
-[K,S,P] = dlqr(A,B,Q,R);          
+% The control is working at discrete time -> dlqr command is needed
+% To avoid K matriz too small (1e-20 order), the information about the
+% sampling time should given through the system state sys = ss(A, B, C, D, ts)
+Ts = 0.2; % Sampling time fron sensors information
+sysc = ss(A, B, [], []); 
+sysd = c2d(sysc, Ts, 'zoh'); 
+[K,S,P] = dlqr(sysd.A,sysd.B,Q,R);    
+% [K,S,P] = lqr(A,B,Q,R); 
+ 
+% A the beginning, there are big angles variations -> an extension of
+% linear control is needed, using THE SAME GAIN MATRIX found before
+
+Kp = K(:, 4:6); % Proportional gain matrix dim.(3x3)
+Kd = K(:, 1:3); % Derivative gain matrix dim.(3x3)
+
+% The only effectively different part is in the simulink model, where the state vector components 
+% are substituted with the correct terms due to non-small angles. 
 
 
 

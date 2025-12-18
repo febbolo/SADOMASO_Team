@@ -447,6 +447,24 @@ R = diag(1./(u_max).^2);
 
 %% ------------ ACTUATORS -----------------
 
+B_z_min = 1e-6;
+
+% Magnetorquers - RWp100 (Blue Canyon Technologies)
+mag_perm = 0;
+n_wind = 0;
+coil_area = 0; 
+
+D_max_XY = 0.4; % Am^2
+D_max_Z = 0.5; % Am^2
+
+I_max_XY = 0.12; % A
+I_max_Z = 0.18; % A
+
+% Reaction Wheel - RW400 (AAC Clyde Space)
+T_max = 0.008; % N*m
+h_max = 0.05; % N*m*s
+omega_max = 5000 * (2*pi/60); % rad/s (5000rpm)
+Iw_est = h_max / omega_max; % kg*m^2
 
 
 

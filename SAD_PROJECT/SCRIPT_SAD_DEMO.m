@@ -49,7 +49,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.5; 0.1; 0.1];  %[rad/s]
+w0 = [0.1; 0.1; 0.1];  %[rad/s]
 % w0 = [1e-6; 1e-6; n];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
@@ -378,9 +378,9 @@ Filter.POINTING.omega_t = 1; %[rad/s]
 A = [0, 0, 0, 0, 0, 0;...
      0, 0, 0, 0, 0, 0;...
      0, 0, 0, 0, 0, 0;...
-     0, 0, 1, 0, 0, 0;...
      1, 0, 0, 0, 0, 0;...
-     0, 1, 0, 0, 0, 0];
+     0, 1, 0, 0, 0, 0;...
+     0, 0, 1, 0, 0, 0];
  % From state space model
 B = [1/J_depl(1), 0, 0;...
      0, 1/J_depl(5), 0;...
@@ -396,22 +396,9 @@ rank_C = rank(C);
 disp(['The rank of matrix C is: ', num2str(rank_C),', equal to the number of states.' ...
     ' So the system is controllable.']);
 
-% Important : we cannot consider the magnetic field for the optimal
-% control due to the absence of an analytical expression for B_mag, which also 
-% varies with time --> B matrix should be constant
-% So : double architecture : 
-% 1) De-tumbling phase with magnetorquers: - high angular velocities, RW not
-%                                            efficient and Magnetorquers
-%                                            inefficiency is neglected
-%                                          - B_dot method very often used
-%                                          for LEO orbits
-% 2) Slew-manouvre/Pointing phase with RW : - LQR optimal control
-%                                           - small angular velocities, RW
-%                                           very efficient
-
 % DEFINING THRESHOLDS FOR THE DIFFERENT CASES 
 Control.w_tumbling = deg2rad(2); % Treshold for tumbling, [rad]
-Control.w_pointing = 0.1;     % Treshold for slew manouvre, [rad]
+Control.w_pointing = deg2rad(0.5);     % Treshold for pointing, [rad]
 % In the middle we have slew manouvre 
 
 % ------------ DE-TUMBLING ---------------
@@ -426,14 +413,14 @@ k_b = 200000;
 % -------- SLEW / RE-POINTING -------------
 
 % Bryson Method to define Q,R
-% Arbitrary choice of maximum acceptable error
-alpha_max = deg2rad(10); %[rad]
-% Since 2-3 deg/s could be considered tumbling we want to be under that
-% range
+% Arbitrary choice of maximum acceptable error : ~0.5 deg
+alpha_max = deg2rad(0.5); %[rad]
+% Since the slew manouvre starts right after the detumbling we consider as
+% omega_max the treshold on the detumbling case
 % Defining maximum torque for RW:  TO BE DEFINED!!!
 M_RW_max = 3e-3; %[Nm]
 
-x_max = [Control.w_tumbling, Control.w_tumbling, Control.w_tumbling, alpha_max, alpha_max, alpha_max]; 
+x_max = [Control.w_pointing,Control.w_pointing, Control.w_pointing, alpha_max, alpha_max, alpha_max]; 
 u_max = [M_RW_max, M_RW_max, M_RW_max];
 
 Q = diag(1./(x_max).^2); 
@@ -442,7 +429,7 @@ R = diag(1./(u_max).^2);
 % Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
 % algebraic Riccati equation 
 % The control is working at discrete time -> dlqr command is needed
-% To avoid K matriz too small (1e-20 order), the information about the
+% To avoid K matrix too small (1e-20 order), the information about the
 % sampling time should given through the system state sys = ss(A, B, C, D, ts)
 Ts = 0.2; % Sampling time fron sensors information
 sysc = ss(A, B, [], []); 

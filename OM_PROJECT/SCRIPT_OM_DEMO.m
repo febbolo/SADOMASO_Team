@@ -66,6 +66,10 @@ x0 = [LEG1.MostEfficient.t1, LEG1.MostEfficient.t2];
 % Minimum deltaV transfer for LEG1
 disp(LEG1.MostEfficient);
 
+% -------- GA DESIGN -------
+
+
+
 
 % ------- LEG 2 ----------
 % Defining a struct containing all the data of the LEG1
@@ -96,6 +100,9 @@ disp(LEG2.MostEfficient);
 
 % Contour plot (porkchop plot) of LEG1 
 porkchop_plot(LEG1);
+
+% Contour plot (porkchop plot) of LEG2
+porkchop_plot(LEG2)
 
 % Propagate the orbits, initial conditions chosen as t1 and t2 of the most
 % efficient transfer

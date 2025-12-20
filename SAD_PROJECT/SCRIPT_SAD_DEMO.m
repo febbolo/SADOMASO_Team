@@ -401,6 +401,11 @@ Control.w_tumbling = deg2rad(2); % Treshold for tumbling, [rad]
 Control.w_pointing = deg2rad(0.5);     % Treshold for pointing, [rad]
 % In the middle we have slew manouvre 
 
+w_enter = deg2rad(2);
+w_exit = deg2rad(5);
+w_enter_2 = deg2rad(0.5);
+w_exit_2 = deg2rad(1);
+
 % ------------ DE-TUMBLING ---------------
 % B_dot method
 % B_dot_m = -w_est x B_m
@@ -445,6 +450,87 @@ Kd = K(:, 1:3); % Derivative gain matrix dim.(3x3)
 
 % The only effectively different part is in the simulink model, where the state vector components 
 % are substituted with the correct terms due to non-small angles. 
+
+
+% %% PID pole placement for single-axis rotational dynamics: I*theta_ddot = T
+% % Plant: G(s) = 1/(I*s^2)
+% % Controller (PID): C(s) = Kp + Ki/s + Kd*s
+% % Closed-loop characteristic (unity feedback):
+% %   1 + C(s)G(s) = 0  ->  I s^3 + Kd s^2 + Kp s + Ki = 0
+% % Divide by I:
+% %   s^3 + (Kd/I)s^2 + (Kp/I)s + (Ki/I) = 0
+% %
+% % Choose desired poles p1,p2,p3, build desired polynomial:
+% %   (s-p1)(s-p2)(s-p3) = s^3 + a2 s^2 + a1 s + a0
+% % Match coefficients:
+% %   Kd = I*a2,  Kp = I*a1,  Ki = I*a0
+% 
+% clear; clc; close all;
+% 
+% Ixx = 0.85163;	Ixy = 0.00000;	Ixz = 0.00000;
+% Iyx = 0.00000;	Iyy = 6.82684;	Iyz = 0.00000;
+% Izx = 0.00000;	Izy = 0.00000;	Izz = 7.18354;
+% 
+% % Parameters
+% I = Izz;   % [kg*m^2] inertia (edit)
+% 
+% % Desired poles (edit these)
+% % Option A: directly set 3 poles (must be stable: negative real parts)
+% p1 = -0.005;
+% p2 = -0.0050;
+% p3 = -0.0012;
+% 
+% % Option B (comment Option A and use this): 2nd-order shape + extra pole
+% % wn   = 10;        % natural frequency [rad/s]
+% % zeta = 0.7;       % damping ratio
+% % p3   = -5*wn;     % extra real pole, typically 3-10x faster than dominant
+% % p1   = -zeta*wn + 1j*wn*sqrt(1-zeta^2);
+% % p2   = -zeta*wn - 1j*wn*sqrt(1-zeta^2);
+% 
+% % Compute PID gains by coefficient matching
+% desired_poly = poly([p1 p2 p3]);  % returns [1 a2 a1 a0]
+% % Reminder:
+% %   POLY(V), when V is a vector, is a vector whose elements are
+% %   the coefficients of the polynomial whose roots are the
+% %   elements of V. For vectors, ROOTS and POLY are inverse
+% %   functions of each other, up to ordering, scaling, and
+% %   roundoff error.
+% 
+% a2 = desired_poly(2);
+% a1 = desired_poly(3);
+% a0 = desired_poly(4);
+% 
+% Kd = I*a2;
+% Kp = I*a1;
+% Ki = I*a0;
+% 
+% fprintf('Desired poles: [%s]\n', num2str([p1 p2 p3]));
+% fprintf('PID gains:\n  Kp = %.6g\n  Ki = %.6g\n  Kd = %.6g\n', Kp, Ki, Kd);
+% 
+% % Build transfer functions and check
+% s = tf('s');
+% G = 1/(I*s^2);
+% C = Kp + Ki/s + Kd*s;
+% 
+% L = C*G;
+% Tcl = feedback(L, 1);   % closed-loop theta/ref
+% 
+% % Verify characteristic polynomial numerically:
+% % Denominator of Tcl should be I*s^3 + Kd*s^2 + Kp*s + Ki (up to scaling)
+% disp('Closed-loop denominator (Tcl):');
+% disp('Denominator of Tcl should be I*s^3 + Kd*s^2 + Kp*s + Ki (up to scaling)')
+% Tcl_den = Tcl.Denominator{1};
+% disp(Tcl_den);
+% 
+% % Step response
+% figure; step(Tcl);
+% grid on;
+% title('Closed-loop \theta response to step reference');
+% 
+% % Control effort transfer function (torque / ref)
+% % Torque T = C(s)*(ref - theta)
+% % With unity feedback: T/ref = C(s)/(1 + C(s)G(s))
+% Tu = minreal( C / (1 + C*G) );
 
 
 

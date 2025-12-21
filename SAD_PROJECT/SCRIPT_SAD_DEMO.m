@@ -436,13 +436,13 @@ R = diag(1./(u_max).^2);
 % The control is working at discrete time -> dlqr command is needed
 % To avoid K matrix too small (1e-20 order), the information about the
 % sampling time should given through the system state sys = ss(A, B, C, D, ts)
-Ts = 0.2; % Sampling time fron sensors information
+Ts = 0.2; % Sampling time from sensors information
 sysc = ss(A, B, [], []); 
 sysd = c2d(sysc, Ts, 'zoh'); 
 [K,S,P] = dlqr(sysd.A,sysd.B,Q,R);    
 % [K,S,P] = lqr(A,B,Q,R); 
  
-% A the beginning, there are big angles variations -> an extension of
+% At the beginning, there are big angles variations -> an extension of
 % linear control is needed, using THE SAME GAIN MATRIX found before
 
 Kp = K(:, 4:6); % Proportional gain matrix dim.(3x3)

@@ -1,8 +1,12 @@
 function [MISSION] = deltaV_mission(MISSION,time_step_case)
-%DELTAV_MISSION This function computes the deltaV required for a certain
-% specified mission. The Injection Orbit from departure planet and
-% Insertion Orbit to arrival planet ARE NOT CONSIDERED.
-%
+
+%DELTAV_MISSION This function computes the deltaV required for an interplanetary
+% Lambert transfer between two given planets; in particular, it finds the minimum
+% delta v possible, given two windows of time for departure and arrival and
+% solving the Lambert problem for each combination of times (so applying a grid search).
+% A constraint on the maximum velocity v infinite may be considered. 
+% The Injection Orbit from departure planet and Insertion Orbit to arrival planet ARE NOT CONSIDERED.
+
 % INPUTS : MISSION : This struct contains all the informations for the
 %                   mission, and should be fullfilled with the following
 %                   data: 

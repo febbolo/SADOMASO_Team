@@ -12,7 +12,7 @@
 
 % CONTRIBUTORS
 % Amura Fabio, 10830618, fabio.amura@mail.polimi.it
-% Crisanti Costanza
+% Crisanti Costanza, 10911209, costanza.crisanti@mail.polimi.it
 % Deli Luca 
 % Tomas (non so i cognomi)
 

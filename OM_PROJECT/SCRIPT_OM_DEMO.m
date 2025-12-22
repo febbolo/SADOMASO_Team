@@ -66,11 +66,6 @@ x0 = [LEG1.MostEfficient.t1, LEG1.MostEfficient.t2];
 % Minimum deltaV transfer for LEG1
 disp(LEG1.MostEfficient);
 
-% -------- GA DESIGN -------
-
-
-
-
 % ------- LEG 2 ----------
 % Defining a struct containing all the data of the LEG1
 LEG2.Data.mu_sun = astroConstants(4); %[km^3/s^2]
@@ -94,6 +89,61 @@ x0 = [LEG2.MostEfficient.t1, LEG2.MostEfficient.t2];
 
 % Minimum deltaV transfer for LEG
 disp(LEG2.MostEfficient);
+
+% -------- POWERED GRAVITY ASSIST DESIGN -------
+% Defining the already known data
+FLYBY.Data.V_minus = LEG1.MostEfficient.v_t2_tr; % S/c absolute veolcity wrt Sun at entry of flyby
+FLYBY.Data.V_planet = LEG1.MostEfficient.v_t2; % Planet absolute veolcity wrt Sun
+FLYBY.Data.V_plus = LEG2.MostEfficient.v_t1_tr; % S/c absolute velocity wrt Sun at exit of flyby
+if norm(FLYBY.Data.V_minus)>norm(FLYBY.Data.V_plus)
+    FLYBY.Data.type = "leading"; 
+else
+    FLYBY.Data.type = "trailing"; 
+end 
+FLYBY.Data.mu_E = astroConstants(13);
+
+% Finding the relative velocities wrt the planet
+FLYBY.Velocities.v_inf_minus = FLYBY.Data.V_minus - FLYBY.Data.V_planet; 
+FLYBY.Velocities.v_inf_plus = FLYBY.Data.V_plus - FLYBY.Data.V_planet;
+FLYBY.Velocities.Delta_v_flyby = FLYBY.Velocities.v_inf_plus - FLYBY.Velocities.v_inf_minus; % Total change of velocity
+FLYBY.Velocities.Delta_v_flyby_norm = norm(FLYBY.Velocities.Delta_v_flyby); 
+
+% Total turning angle 
+FLYBY.Arcs.delta = acos(dot(FLYBY.Velocities.v_inf_minus, FLYBY.Velocities.v_inf_plus) / (norm(FLYBY.Velocities.v_inf_minus) * norm(FLYBY.Velocities.v_inf_plus))); % Total turinig angle [rad] 
+
+% Solving for radius of pericentre, using equation solver
+FLYBY.Arcs.e_0 = 1/sin(FLYBY.Arcs.delta/2);
+FLYBY.Arcs.a_0 = -FLYBY.Data.mu_E /(norm(FLYBY.Velocities.v_inf_plus))^2; 
+FLYBY.Arcs.rp_0 = FLYBY.Arcs.a_0*(1-FLYBY.Arcs.e_0);% First guess  
+fun = @(rp) asin(1/(1+rp*(norm(FLYBY.Velocities.v_inf_minus))^2/FLYBY.Data.mu_E)) +asin(1/(1+rp*(norm(FLYBY.Velocities.v_inf_plus))^2/FLYBY.Data.mu_E)) - FLYBY.Arcs.delta; 
+FLYBY.Arcs.rp = fzero(fun, FLYBY.Arcs.rp_0); 
+FLYBY.Data.R_E = astroConstants(23); 
+FLYBY.Data.h_atm = 100; %[km] Karman Line
+%if FLYBY.Arcs.rp > (FLYBY.Data.R_E + FLYBY.Data.h_atm)
+%   fprintf("valid rp = %f\n", FLYBY.Arcs.rp); 
+%else
+%    error("Impact"); 
+%end 
+% ATTENTION: NOW WE HAVE IMPACT -> ADJUST DELTA_V (THIS IS A CONSTRAINT)
+
+% Arcs characteristics
+FLYBY.Arcs.e_plus = 1+FLYBY.Arcs.rp*(norm(FLYBY.Velocities.v_inf_plus))^2/FLYBY.Data.mu_E; 
+FLYBY.Arcs.a_plus = -FLYBY.Data.mu_E /(norm(FLYBY.Velocities.v_inf_plus))^2; 
+FLYBY.Arcs.delta_plus =2*asin(1/FLYBY.Arcs.e_plus);
+FLYBY.Arcs.e_minus = 1+FLYBY.Arcs.rp*(norm(FLYBY.Velocities.v_inf_minus))^2/FLYBY.Data.mu_E;
+FLYBY.Arcs.a_minus = -FLYBY.Data.mu_E /(norm(FLYBY.Velocities.v_inf_minus))^2; 
+FLYBY.Arcs.delta_minus =2*asin(1/FLYBY.Arcs.e_minus);
+
+% Velocities at pericentre and cost of the gravity assist
+FLYBY.Arcs.u = cross(FLYBY.Velocities.v_inf_minus,FLYBY.Velocities.v_inf_plus);   
+FLYBY.Arcs.u = FLYBY.Arcs.u / norm(FLYBY.Arcs.u); % normal to plane of arcs (APPROXIMATION - in realty, v_inf_plus and v_inf_minus are NOT on the same plane)
+FLYBY.Arcs.direction = Rodrigues(FLYBY.Velocities.v_inf_minus,FLYBY.Arcs.u, FLYBY.Arcs.delta_minus/2); 
+FLYBY.Arcs.direction = FLYBY.Arcs.direction/norm(FLYBY.Arcs.direction);
+FLYBY.Velocities.vp_minus = sqrt(norm(FLYBY.Velocities.v_inf_minus)^2+2*FLYBY.Data.mu_E/FLYBY.Arcs.rp)*FLYBY.Arcs.direction; 
+FLYBY.Velocities.vp_plus = sqrt(norm(FLYBY.Velocities.v_inf_plus)^2+2*FLYBY.Data.mu_E/FLYBY.Arcs.rp)*FLYBY.Arcs.direction; 
+FLYBY.Velocities.Delta_v_ga = FLYBY.Velocities.vp_plus - FLYBY.Velocities.vp_minus; % Delta V = manoeuvre to be given at pericentre
+FLYBY.Velocities.Delta_v_ga_norm = norm (FLYBY.Velocities.Delta_v_ga); 
+% CHECK THE APPROXIMATION USED FOR VECTORS DIRECTIONS
 
 
 %% -------------- PLOTS : ASSIGNMENT 1 -----------------

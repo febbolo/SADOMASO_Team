@@ -537,7 +537,8 @@ Kd = K(:, 1:3); % Derivative gain matrix dim.(3x3)
 
 %% ------------ ACTUATORS -----------------
 
-B_z_min = 1e-4;
+
+B_z_min = 5e-6;
 
 % Magnetorquers - RWp100 (Blue Canyon Technologies)
 mag_perm = 0;

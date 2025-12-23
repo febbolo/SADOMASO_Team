@@ -401,9 +401,9 @@ Control.w_tumbling = deg2rad(2); % Treshold for tumbling, [rad]
 Control.w_pointing = deg2rad(0.5);     % Treshold for pointing, [rad]
 % In the middle we have slew manouvre 
 
-w_enter = deg2rad(2);
+w_enter = Control.w_tumbling;
 w_exit = deg2rad(5);
-w_enter_2 = deg2rad(0.5);
+w_enter_2 = Control.w_pointing;
 w_exit_2 = deg2rad(1);
 
 % ------------ DE-TUMBLING ---------------
@@ -415,7 +415,7 @@ w_exit_2 = deg2rad(1);
 % Gain of the B_dot : TUNING  
 k_b = 200000;
 
-% -------- SLEW / RE-POINTING -------------
+% -------- SLEW / POINTING -------------
 
 % Bryson Method to define Q,R
 % Arbitrary choice of maximum acceptable error : ~0.5 deg
@@ -423,10 +423,11 @@ alpha_max = deg2rad(0.5); %[rad]
 % Since the slew manouvre starts right after the detumbling we consider as
 % omega_max the treshold on the detumbling case
 % Defining maximum torque for RW:  TO BE DEFINED!!!
-M_RW_max = 3e-3; %[Nm]
+M_RW_max = 8e-3; % [Nm]
+M_M_max = 1.5e-6; % Average maximum magnetic torque [Nm]
 
 x_max = [Control.w_pointing,Control.w_pointing, Control.w_pointing, alpha_max, alpha_max, alpha_max]; 
-u_max = [M_RW_max, M_RW_max, M_RW_max];
+u_max = [M_M_max, M_M_max, M_M_max];
 
 Q = diag(1./(x_max).^2); 
 R = diag(1./(u_max).^2);

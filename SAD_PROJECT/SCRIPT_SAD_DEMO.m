@@ -537,13 +537,10 @@ Kd = K(:, 1:3); % Derivative gain matrix dim.(3x3)
 
 %% ------------ ACTUATORS -----------------
 
+
 B_z_min = 1e-4;
 
 % Magnetorquers - RWp100 (Blue Canyon Technologies)
-mag_perm = 0;
-n_wind = 0;
-coil_area = 0; 
-
 D_max_XY = 0.4; % Am^2
 D_max_Z = 0.5; % Am^2
 
@@ -555,14 +552,6 @@ T_max = 0.008; % N*m
 h_max = 0.05; % N*m*s
 omega_max = 5000 * (2*pi/60); % rad/s (5000rpm)
 Iw_est = h_max / omega_max; % kg*m^2
-
-
-
-
-
-
-
-
 
 
 

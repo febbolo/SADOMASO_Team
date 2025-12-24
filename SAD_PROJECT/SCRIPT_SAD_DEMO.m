@@ -418,16 +418,16 @@ k_b = 200000;
 % -------- SLEW / POINTING -------------
 
 % Bryson Method to define Q,R
-% Arbitrary choice of maximum acceptable error : ~0.5 deg
-alpha_max = deg2rad(0.5); %[rad]
+% Arbitrary choice of maximum acceptable error : ~5 deg
+alpha_max = deg2rad(5); %[rad]
 % Since the slew manouvre starts right after the detumbling we consider as
 % omega_max the treshold on the detumbling case
-% Defining maximum torque for RW:  TO BE DEFINED!!!
-M_RW_max = 8e-3; % [Nm]
+% Defining desired torque for RW:
+M_RW_max = 1e-5; % [Nm]
 M_M_max = 1.5e-6; % Average maximum magnetic torque [Nm]
 
-x_max = [Control.w_pointing,Control.w_pointing, Control.w_pointing, alpha_max, alpha_max, alpha_max]; 
-u_max = [M_M_max, M_M_max, M_M_max];
+x_max = [Control.w_tumbling,Control.w_tumbling, Control.w_tumbling, alpha_max, alpha_max, alpha_max]; 
+u_max = [M_M_max, M_M_max, M_RW_max];
 
 Q = diag(1./(x_max).^2); 
 R = diag(1./(u_max).^2);

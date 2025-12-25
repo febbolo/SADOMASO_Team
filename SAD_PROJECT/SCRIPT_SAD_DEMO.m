@@ -617,16 +617,16 @@ for i = 1:3
     grid on;
 end
 
-% Plot the real actuators torque components over time
-figure('Name','Real Actuators Torque Components over Time');
-for i = 1:3
-    subplot(3, 1, i);
-    plot(time, T_act(:, i), 'LineWidth', 1.5);
-    title(['Real Actuator Torque Component T_{' num2str(i) '} over Time']);
-    xlabel('Time (s)');
-    ylabel(['T_{' num2str(i) '} (Nm)']);
-    grid on;
-end
+% % Plot the real actuators torque components over time
+% figure('Name','Real Actuators Torque Components over Time');
+% for i = 1:3
+%     subplot(3, 1, i);
+%     plot(time, T_act(:, i), 'LineWidth', 1.5);
+%     title(['Real Actuator Torque Component T_{' num2str(i) '} over Time']);
+%     xlabel('Time (s)');
+%     ylabel(['T_{' num2str(i) '} (Nm)']);
+%     grid on;
+% end
 
 % %% ----------- SATELLITE SCENARIO ----------------
 % 

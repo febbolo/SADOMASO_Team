@@ -49,7 +49,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.5; 0.7; 0.6];  %[rad/s]
+w0 = [0.5; 0.4; 0.6];  %[rad/s]
 % w0 = [1e-6; 1e-6; n];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
@@ -453,99 +453,14 @@ Kd = K(:, 1:3); % Derivative gain matrix dim.(3x3)
 % are substituted with the correct terms due to non-small angles. 
 
 
-% %% PID pole placement for single-axis rotational dynamics: I*theta_ddot = T
-% % Plant: G(s) = 1/(I*s^2)
-% % Controller (PID): C(s) = Kp + Ki/s + Kd*s
-% % Closed-loop characteristic (unity feedback):
-% %   1 + C(s)G(s) = 0  ->  I s^3 + Kd s^2 + Kp s + Ki = 0
-% % Divide by I:
-% %   s^3 + (Kd/I)s^2 + (Kp/I)s + (Ki/I) = 0
-% %
-% % Choose desired poles p1,p2,p3, build desired polynomial:
-% %   (s-p1)(s-p2)(s-p3) = s^3 + a2 s^2 + a1 s + a0
-% % Match coefficients:
-% %   Kd = I*a2,  Kp = I*a1,  Ki = I*a0
-% 
-% clear; clc; close all;
-% 
-% Ixx = 0.85163;	Ixy = 0.00000;	Ixz = 0.00000;
-% Iyx = 0.00000;	Iyy = 6.82684;	Iyz = 0.00000;
-% Izx = 0.00000;	Izy = 0.00000;	Izz = 7.18354;
-% 
-% % Parameters
-% I = Izz;   % [kg*m^2] inertia (edit)
-% 
-% % Desired poles (edit these)
-% % Option A: directly set 3 poles (must be stable: negative real parts)
-% p1 = -0.005;
-% p2 = -0.0050;
-% p3 = -0.0012;
-% 
-% % Option B (comment Option A and use this): 2nd-order shape + extra pole
-% % wn   = 10;        % natural frequency [rad/s]
-% % zeta = 0.7;       % damping ratio
-% % p3   = -5*wn;     % extra real pole, typically 3-10x faster than dominant
-% % p1   = -zeta*wn + 1j*wn*sqrt(1-zeta^2);
-% % p2   = -zeta*wn - 1j*wn*sqrt(1-zeta^2);
-% 
-% % Compute PID gains by coefficient matching
-% desired_poly = poly([p1 p2 p3]);  % returns [1 a2 a1 a0]
-% % Reminder:
-% %   POLY(V), when V is a vector, is a vector whose elements are
-% %   the coefficients of the polynomial whose roots are the
-% %   elements of V. For vectors, ROOTS and POLY are inverse
-% %   functions of each other, up to ordering, scaling, and
-% %   roundoff error.
-% 
-% a2 = desired_poly(2);
-% a1 = desired_poly(3);
-% a0 = desired_poly(4);
-% 
-% Kd = I*a2;
-% Kp = I*a1;
-% Ki = I*a0;
-% 
-% fprintf('Desired poles: [%s]\n', num2str([p1 p2 p3]));
-% fprintf('PID gains:\n  Kp = %.6g\n  Ki = %.6g\n  Kd = %.6g\n', Kp, Ki, Kd);
-% 
-% % Build transfer functions and check
-% s = tf('s');
-% G = 1/(I*s^2);
-% C = Kp + Ki/s + Kd*s;
-% 
-% L = C*G;
-% Tcl = feedback(L, 1);   % closed-loop theta/ref
-% 
-% % Verify characteristic polynomial numerically:
-% % Denominator of Tcl should be I*s^3 + Kd*s^2 + Kp*s + Ki (up to scaling)
-% disp('Closed-loop denominator (Tcl):');
-% disp('Denominator of Tcl should be I*s^3 + Kd*s^2 + Kp*s + Ki (up to scaling)')
-% Tcl_den = Tcl.Denominator{1};
-% disp(Tcl_den);
-% 
-% % Step response
-% figure; step(Tcl);
-% grid on;
-% title('Closed-loop \theta response to step reference');
-% 
-% % Control effort transfer function (torque / ref)
-% % Torque T = C(s)*(ref - theta)
-% % With unity feedback: T/ref = C(s)/(1 + C(s)G(s))
-% Tu = minreal( C / (1 + C*G) );
-
-
-
 %% ------------ ACTUATORS -----------------
 
 
-B_z_min = 1e-4;
+B_z_min = 5e-6;
 
-% Magnetorquers - RWp100 (Blue Canyon Technologies)
-D_max_XY = 0.4; % Am^2
-D_max_Z = 0.5; % Am^2
-
-I_max_XY = 0.12; % A
-I_max_Z = 0.18; % A
+% Magnetorquers - CR0020 (X-Y axis), CR0010 (Z axis) (CubeSpace)
+D_max_XY = 2; % Am^2
+D_max_Z = 1; % Am^2
 
 % Reaction Wheel - RW400 (AAC Clyde Space)
 T_max = 0.008; % N*m
@@ -554,47 +469,36 @@ omega_max = 5000 * (2*pi/60); % rad/s (5000rpm)
 Iw_est = h_max / omega_max; % kg*m^2
 
 
+%% -------------- PLOTS --------
 
-% %% -------------- CHECKING ORTHONORMALITY && ATTITUDE --------
-% 
-% 
-% 
-% simout = sim('SIM_SAD_DEMO');
-% time = simout.tout; 
-% A_B_N = simout.A_B_N;
-% A_B_N_ortho = simout.A_B_N_ortho;
-% A_B_LVLH = simout.A_B_LVLH;
-% w_B_LVLH = simout.w_B_LVLH;
-% 
-% 
-% 
-% % Pre-allocate Q, error and norm_error
-% Q = zeros(3, 3, length(time));
-% error = zeros(3, 3, length(time));
-% norm_error = zeros(1, length(time));
-% 
-% % Testing Orthonormality of A
-% for i = 1:length(time)
-%     Q(:,:,i) =A_B_N(:,:,i)'*A_B_N(:,:,i);
-%     error(:,:,i) = abs(eye(3)-Q(:,:,i));
-%     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
-% end
-% 
-% % Plot orthonormality error of A
-% figure('Name','Orthonormality error of A')
-% plot(time, norm_error)
-% 
-% % Testing Orthonormality of A_ortho
-% for i = 1:length(time)
-%     Q(:,:,i) = A_B_N_ortho(:,:,i)'*A_B_N_ortho(:,:,i);
-%     error(:,:,i) = abs(eye(3)-Q(:,:,i));
-%     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
-% end
-% 
-% % Plot orthonormality error of A_ortho
-% figure('Name','Orthonormality error of A after orthonormalisation')
-% plot(time, norm_error)
-% 
+simout = sim('SIM_SAD_DEMO');
+time = simout.tout; 
+A_B_N = simout.A_B_N;
+A_B_N_ortho = simout.A_B_N_ortho;
+A_B_LVLH = simout.A_B_LVLH;
+w_B_LVLH = simout.w_B_LVLH;
+
+
+% Real Angular velocity vector 
+w_B = simout.w_B;
+% Estimated angular velcity vector
+w_est = simout.w_est; 
+% Estimated Attitude Error Matrix
+A_e = simout.A_e;
+% State Space vector 
+x = simout.x;
+% Ideal control torque  
+u = simout.u;
+% Actuators real torque 
+T_act = simout.T_act;
+
+
+% Pre-allocate Q, error and norm_error
+Q = zeros(3, 3, length(time));
+error = zeros(3, 3, length(time));
+norm_error = zeros(1, length(time));
+
+
 % % Plot the attitude error between Body Frame and Uniformly rotating LVLH
 % % Frame
 % figure('Name','Attitude Matrix A_B_LVLH Components over Time');
@@ -608,28 +512,121 @@ Iw_est = h_max / omega_max; % kg*m^2
 %         grid on;
 %     end
 % end
-% 
+
 % % Plot the error of the angular velocities (in body frame) of the absolute
 % % angular velocity wrt the LVLH angular velocity
 % figure('Name','Error on w (B wrt LVLH) over time')
 % subplot(3, 1, 1);
-% plot(time, w_B_LVLH(1,:), 'b', 'LineWidth', 1.5);
+% plot(time, w_B_LVLH(1,:), 'LineWidth', 1.5);
 % title('Angular Velocity in X Direction');
 % xlabel('Time (s)');
 % ylabel('error on w_x (rad/s)');
 % grid on;
 % subplot(3, 1, 2);
-% plot(time, w_B_LVLH(2,:), 'r', 'LineWidth', 1.5);
+% plot(time, w_B_LVLH(2,:), 'LineWidth', 1.5);
 % title('Angular Velocity in Y Direction');
 % xlabel('Time (s)');
 % ylabel('error on w_y (rad/s)');
 % grid on;
 % subplot(3, 1, 3);
-% plot(time, w_B_LVLH(3,:), 'g', 'LineWidth', 1.5);
+% plot(time, w_B_LVLH(3,:), 'LineWidth', 1.5);
 % title('Angular Velocity in Z Direction');
 % xlabel('Time (s)');
 % ylabel('error on w_z (rad/s)');
 % grid on;
+
+
+% Plot the attitude error matrix components over time
+figure('Name','Attitude Error Matrix Components over Time');
+for i = 1:3
+    for j = 1:3
+        subplot(3, 3, (i-1)*3 + j);
+        plot(time, squeeze(A_e(i, j, :)), 'LineWidth', 1.5);
+        title(['A_{e,' num2str(i) num2str(j) '} over Time']);
+        xlabel('Time (s)');
+        ylabel(['A_{e,' num2str(i) num2str(j) '}']);
+        grid on;
+    end
+end
+
+
+% Testing Orthonormality of A_e
+for i = 1:length(time)
+    Q(:,:,i) = A_e(:,:,i)'*A_e(:,:,i);
+    error(:,:,i) = abs(eye(3)-Q(:,:,i));
+    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+end
+% Plot orthonormality error of A_e
+figure('Name','Orthonormality error of A_e')
+plot(time, norm_error)
+
+
+% Plot the real and estimated angular velocity components over time
+figure('Name','Real and Estimated Angular Velocity Components over Time');
+subplot(2, 1, 1);
+hold on;
+plot(time, w_B(1, :), 'LineWidth', 1.5, 'DisplayName', 'Real w_x');
+plot(time, w_B(2, :), 'LineWidth', 1.5, 'DisplayName', 'Real w_y');
+plot(time, w_B(3, :), 'LineWidth', 1.5, 'DisplayName', 'Real w_z');
+title('Real Angular Velocity Components');
+xlabel('Time (s)');
+ylabel('Angular Velocity (rad/s)');
+legend('show');
+grid on;
+hold off;
+subplot(2, 1, 2);
+hold on;
+plot(time, w_est(1, :), 'LineWidth', 1.5, 'DisplayName', 'Estimated w_x');
+plot(time, w_est(2, :), 'LineWidth', 1.5, 'DisplayName', 'Estimated w_y');
+plot(time, w_est(3, :), 'LineWidth', 1.5, 'DisplayName', 'Estimated w_z');
+title('Estimated Angular Velocity Components');
+xlabel('Time (s)');
+ylabel('Angular Velocity (rad/s)');
+legend('show');
+grid on;
+hold off;
+
+
+% Plot the state vector components over time
+figure('Name','State Vector Components over Time');
+for i = 1:3
+    subplot(2, 3, i);
+    plot(time, x(i, :), 'LineWidth', 1.5);
+    title(['Angular Velocity Component \omega_{' num2str(i) '} over Time']);
+    xlabel('Time (s)');
+    ylabel(['\omega_{' num2str(i) '} (rad/s)']);
+    grid on;
+end
+for i = 4:6
+    subplot(2, 3, i);
+    plot(time, x(i, :), 'LineWidth', 1.5);
+    title(['Angle Component \theta_{' num2str(i-3) '} over Time']);
+    xlabel('Time (s)');
+    ylabel(['\theta_{' num2str(i-3) '} (rad)']);
+    grid on;
+end
+
+% Plot the ideal control torque components over time
+figure('Name','Ideal Control Torque Components over Time');
+for i = 1:3
+    subplot(3, 1, i);
+    plot(time, u(:, i), 'LineWidth', 1.5);
+    title(['Ideal Control Torque Component u_{' num2str(i) '} over Time']);
+    xlabel('Time (s)');
+    ylabel(['u_{' num2str(i) '} (Nm)']);
+    grid on;
+end
+
+% Plot the real actuators torque components over time
+figure('Name','Real Actuators Torque Components over Time');
+for i = 1:3
+    subplot(3, 1, i);
+    plot(time, T_act(:, i), 'LineWidth', 1.5);
+    title(['Real Actuator Torque Component T_{' num2str(i) '} over Time']);
+    xlabel('Time (s)');
+    ylabel(['T_{' num2str(i) '} (Nm)']);
+    grid on;
+end
 
 % %% ----------- SATELLITE SCENARIO ----------------
 % 

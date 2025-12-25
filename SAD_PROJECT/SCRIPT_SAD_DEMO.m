@@ -422,9 +422,9 @@ k_b = 200000;
 alpha_max = deg2rad(5); %[rad]
 % Since the slew manouvre starts right after the detumbling we consider as
 % omega_max the treshold on the detumbling case
-% Defining desired torque for RW:
+% Defining desired torques (see Actuators section for maximum dipole/torque):
 M_RW_max = 1e-5; % [Nm]
-M_M_max = 1.5e-6; % Average maximum magnetic torque [Nm]
+M_M_max = 1.5e-6; % [Nm]
 
 x_max = [Control.w_tumbling,Control.w_tumbling, Control.w_tumbling, alpha_max, alpha_max, alpha_max]; 
 u_max = [M_M_max, M_M_max, M_RW_max];

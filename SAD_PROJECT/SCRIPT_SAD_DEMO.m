@@ -13,9 +13,6 @@ clc
 close all
 
 % S/C Inertia 
-% J_depl = [100.9, 0, 0;...
-%           0, 25.1, 0;...
-%           0, 0, 91.6]*1e-2; %kg*m^2
 % 6U CubeSat inertia
 J_depl = [18, 0, 0;...
           0, 12, 0;...
@@ -49,7 +46,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.5; 0.4; 0.6];  %[rad/s]
+w0 = [0.2; 0.4; 0.3];  %[rad/s]
 % w0 = [1e-6; 1e-6; n];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
@@ -401,10 +398,20 @@ Control.w_tumbling = deg2rad(2); % Treshold for tumbling, [rad]
 Control.w_pointing = deg2rad(0.5);     % Treshold for pointing, [rad]
 % In the middle we have slew manouvre 
 
-w_enter = Control.w_tumbling;
-w_exit = deg2rad(5);
-w_enter_2 = Control.w_pointing;
-w_exit_2 = deg2rad(1);
+% ----- Angular velocities thresholds for State Flow ------
+w_enter = Control.w_tumbling; % To exit DETUMBLING and enter in SLEW
+w_exit = deg2rad(3.5);  % If exceeded, from SLEW come back to DETUMBLING
+w_enter_2 = Control.w_pointing; % To exit SLEW and enter POINTING
+w_exit_2 = deg2rad(1.2); % If exceeded, from POINTING come back to SLEW
+
+% ------- Angles threshold for State Flow ------
+err_max    = deg2rad(5);   % angles error for entering in POINTING
+eps_w      = 1e-4;           % tolerance on |ω|
+eps_att    = deg2rad(0.2);   % tolerance on attitude error
+
+% ------- Dwell time ---------
+dwell_time = 1;
+
 
 % ------------ DE-TUMBLING ---------------
 % B_dot method
@@ -423,8 +430,8 @@ alpha_max = deg2rad(5); %[rad]
 % Since the slew manouvre starts right after the detumbling we consider as
 % omega_max the treshold on the detumbling case
 % Defining desired torques (see Actuators section for maximum dipole/torque):
-M_RW_max = 1e-5; % [Nm]
-M_M_max = 1.5e-6; % [Nm]
+M_RW_max = 8e-3; % [Nm]
+M_M_max = 1e-4; % [Nm]
 
 x_max = [Control.w_tumbling,Control.w_tumbling, Control.w_tumbling, alpha_max, alpha_max, alpha_max]; 
 u_max = [M_M_max, M_M_max, M_RW_max];

@@ -462,8 +462,6 @@ Kd = K(:, 1:3); % Derivative gain matrix dim.(3x3)
 
 %% ------------ ACTUATORS -----------------
 
-B_z_min = 5e-6;
-
 % Magnetorquers - CR0020 (X-Y axis), CR0010 (Z axis) (CubeSpace)
 D_max_XY = 2; % Am^2
 D_max_Z = 1; % Am^2

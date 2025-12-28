@@ -26,7 +26,9 @@ J2 = 0.00108263; % Second Zonal harmonic
 mu = astroConstants(13); %[km^3/s^2]
 
 % Date Time 
-startTime = datetime(2025,1,1,0,0,0);   % Initial time epoch of project (TO BE DEFINED)
+% Choose the spring equinox so that the Earth sees the Sun along the x
+% inertial direction, almost same of x_t axis of the target reference frame
+startTime = datetime(2025,3,21,0,0,0);   % Initial time epoch of project
 
 % Orbital Parameters
 e = 0.005; % Low eccentricity orbit
@@ -46,7 +48,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.2; 0.4; 0.3];  %[rad/s]
+w0 = [0.6; 0.2; 0.4];  %[rad/s]
 % w0 = [1e-6; 1e-6; n];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
@@ -394,23 +396,23 @@ disp(['The rank of matrix C is: ', num2str(rank_C),', equal to the number of sta
     ' So the system is controllable.']);
 
 % DEFINING THRESHOLDS FOR THE DIFFERENT CASES 
-Control.w_tumbling = deg2rad(2); % Treshold for tumbling, [rad]
+Control.w_tumbling = deg2rad(5); % Treshold for tumbling, [rad]
 Control.w_pointing = deg2rad(0.5);     % Treshold for pointing, [rad]
 % In the middle we have slew manouvre 
 
 % ----- Angular velocities thresholds for State Flow ------
 w_enter = Control.w_tumbling; % To exit DETUMBLING and enter in SLEW
-w_exit = deg2rad(3.5);  % If exceeded, from SLEW come back to DETUMBLING
+w_exit = deg2rad(4);  % If exceeded, from SLEW come back to DETUMBLING
 w_enter_2 = Control.w_pointing; % To exit SLEW and enter POINTING
-w_exit_2 = deg2rad(1.2); % If exceeded, from POINTING come back to SLEW
+w_exit_2 = deg2rad(1.5); % If exceeded, from POINTING come back to SLEW
 
 % ------- Angles threshold for State Flow ------
-err_max    = deg2rad(5);   % angles error for entering in POINTING
-eps_w      = 1e-4;           % tolerance on |ω|
+err_max    = deg2rad(15);   % angles error for POINTING
+eps_w      = deg2rad(0.1);           % tolerance on |ω|
 eps_att    = deg2rad(0.2);   % tolerance on attitude error
 
 % ------- Dwell time ---------
-dwell_time = 1;
+dwell_time = 30; % [s] time before switching to another MODE if conditions are satisfied
 
 
 % ------------ DE-TUMBLING ---------------
@@ -425,8 +427,8 @@ k_b = 200000;
 % -------- SLEW / POINTING -------------
 
 % Bryson Method to define Q,R
-% Arbitrary choice of maximum acceptable error : ~5 deg
-alpha_max = deg2rad(5); %[rad]
+% Arbitrary choice of maximum acceptable error : ~15 deg
+alpha_max = deg2rad(15); %[rad]
 % Since the slew manouvre starts right after the detumbling we consider as
 % omega_max the treshold on the detumbling case
 % Defining desired torques (see Actuators section for maximum dipole/torque):
@@ -463,14 +465,17 @@ Kd = K(:, 1:3); % Derivative gain matrix dim.(3x3)
 %% ------------ ACTUATORS -----------------
 
 % Magnetorquers - CR0020 (X-Y axis), CR0010 (Z axis) (CubeSpace)
-D_max_XY = 2; % Am^2
-D_max_Z = 1; % Am^2
+MTQ.D_max_XY = 2; % Am^2
+MTQ.D_max_Z = 1; % Am^2
 
 % Reaction Wheel - RW400 (AAC Clyde Space)
-T_max = 0.008; % N*m
-h_max = 0.05; % N*m*s
-omega_max = 5000 * (2*pi/60); % rad/s (5000rpm)
-Iw_est = h_max / omega_max; % kg*m^2
+RW.T_max = 0.008; % N*m
+RW.h_max = 0.05; % N*m*s
+RW.omega_max = 5000 * (2*pi/60); % rad/s (5000rpm)
+RW.Iw_est = RW.h_max / RW.omega_max; % kg*m^2
+
+% A Matrix for RW (vector, 1 RW on z axis)
+RW.A = [0;0;1];
 
 
 %% -------------- PLOTS --------
@@ -494,7 +499,7 @@ x = simout.x;
 % Ideal control torque  
 u = simout.u;
 % Actuators real torque 
-T_act = simout.T_act;
+M_act = simout.M_act;
 
 
 % Pre-allocate Q, error and norm_error
@@ -610,27 +615,31 @@ for i = 4:6
     grid on;
 end
 
-% Plot the ideal control torque components over time
-figure('Name','Ideal Control Torque Components over Time');
-for i = 1:3
-    subplot(3, 1, i);
-    plot(time, u(:, i), 'LineWidth', 1.5);
-    title(['Ideal Control Torque Component u_{' num2str(i) '} over Time']);
-    xlabel('Time (s)');
-    ylabel(['u_{' num2str(i) '} (Nm)']);
-    grid on;
-end
+% Plot the ideal control torque and the actuator control torque over time
+figure('Name','Control/Actuator Torque Components over Time');
+subplot(2, 1, 1);
+hold on;
+plot(time, u(:, 1), 'LineWidth', 1.5, 'DisplayName', 'Ideal Torque M_x');
+plot(time, u(:, 2), 'LineWidth', 1.5, 'DisplayName', 'Ideal Torque M_y');
+plot(time, u(:, 3), 'LineWidth', 1.5, 'DisplayName', 'Ideal Torque M_z');
+title('Control Torque');
+xlabel('Time (s)');
+ylabel('Torque (N*m)');
+legend('show');
+grid on;
+hold off;
+subplot(2, 1, 2);
+hold on;
+plot(time, squeeze(M_act(1, :)), 'LineWidth', 1.5, 'DisplayName', 'Actuator Torque M_x');
+plot(time, squeeze(M_act(2, :)), 'LineWidth', 1.5, 'DisplayName', 'Actuator Torque M_y');
+plot(time, squeeze(M_act(3, :)), 'LineWidth', 1.5, 'DisplayName', 'Actuator Torque M_z');
+title('Actuator Torque');
+xlabel('Time (s)');
+ylabel('Torque (N*m)');
+legend('show');
+grid on;
+hold off;
 
-% % Plot the real actuators torque components over time
-% figure('Name','Real Actuators Torque Components over Time');
-% for i = 1:3
-%     subplot(3, 1, i);
-%     plot(time, T_act(:, i), 'LineWidth', 1.5);
-%     title(['Real Actuator Torque Component T_{' num2str(i) '} over Time']);
-%     xlabel('Time (s)');
-%     ylabel(['T_{' num2str(i) '} (Nm)']);
-%     grid on;
-% end
 
 % %% ----------- SATELLITE SCENARIO ----------------
 % 

@@ -174,7 +174,7 @@ if isempty(ans_3d), ANIMATE_3D = true; else, ANIMATE_3D = strcmpi(ans_3d, 'true'
 ans_gt = input('Enable ANIMATE_GT? (true/false) [default: true]: ', 's');
 if isempty(ans_gt), ANIMATE_GT = true; else, ANIMATE_GT = strcmpi(ans_gt, 'true'); end
 
-STEP_ANIM = 1000;      % bigger = faster animation
+STEP_ANIM = 2000;      % bigger = faster animation
 
 % _________________ Case selection __________________
 % RUN_MODE = 'all'    -> run all 4 cases
@@ -213,6 +213,17 @@ end
 
 % Number of points for propagation
 Npts = 100000;
+
+% ================== EXPORT SETTINGS ==================
+SAVE_FRAMES = true;      % <--- metti false se vuoi solo vedere l'animazione
+FPS = 15;                % fps che userai poi in LaTeX
+RES = 150;               % 150 ok, 300 più qualità (ma più pesante)
+
+BASE_OUTDIR = fullfile(pwd,'latex_frames');
+if SAVE_FRAMES && ~exist(BASE_OUTDIR,'dir')
+    mkdir(BASE_OUTDIR);
+end
+
 % _________________ Loop over selected cases __________________
 
 for icase = case_list
@@ -243,6 +254,15 @@ for icase = case_list
 
     fig3D = figure;
     hold on
+
+    if SAVE_FRAMES
+        outdir3D = fullfile(BASE_OUTDIR, sprintf('case%d_3D', icase));
+
+        if ~exist(outdir3D,'dir')
+            mkdir(outdir3D);
+        end
+        frame_id_3D = 0;
+    end
 
     surf(xe, ye, ze, 'CData', earth_img, 'FaceColor','texturemap', 'EdgeColor','none', 'HandleVisibility','off');
 
@@ -285,6 +305,9 @@ for icase = case_list
             set(hDot_rgt, 'XData', r_rgt(kk,1), 'YData', r_rgt(kk,2), 'ZData', r_rgt(kk,3));
 
             drawnow
+        if SAVE_FRAMES
+            frame_id_3D = frame_id_3D + 1;
+            exportgraphics(fig3D, fullfile(outdir3D, sprintf('frame_%04d.jpg', frame_id_3D)),'Resolution', 80);        end
         end
     end
 
@@ -292,6 +315,14 @@ for icase = case_list
 
     figGT = figure;
     hold on
+
+    if SAVE_FRAMES
+        outdirGT = fullfile(BASE_OUTDIR, sprintf('case%d_GT', icase));
+        if ~exist(outdirGT,'dir') 
+            mkdir(outdirGT); 
+        end
+        frame_id_GT = 0;
+    end
     image(lon_img, lat_img, earth);
     set(gca,'YDir','normal');
     
@@ -341,6 +372,10 @@ for icase = case_list
             set(hDotGT_rgt, 'XData', lon_rgt(kk), 'YData', lat_rgt(kk));
     
             drawnow
+         if SAVE_FRAMES
+                frame_id_GT = frame_id_GT + 1;
+                exportgraphics(figGT, fullfile(outdirGT, sprintf('frame_%04d.jpg', frame_id_GT)),'Resolution', 80);
+        end
         end
     end
 end
@@ -394,16 +429,16 @@ T_Earth = 2*pi / Primary.w;
 case_names = { ...
     '1 nominal orbital period (T_{nom})', ...
     '2 RGT orbital period (T_{rgt})', ...
-    '20 RGT orbital periods (2T_{rgt})', ...
+    '200 RGT orbital periods (2T_{rgt})', ...
     '1 Earth rotation (T_Earth)'};
-case_Tend = [ T_nom, 2*T_rgt, 20*T_rgt, T_Earth ]; 
+case_Tend = [ T_nom, 2*T_rgt, 200*T_rgt, T_Earth ]; 
 
 if strcmp(RUN_MODE, 'single')
 
     choice = input(['Which case you want to plot?\n' ...
         '1. 1 x nominal orbital period (T_{nom})\n' ...
         '2. 2 x RGT orbital period (T_{rgt})\n' ...
-        '3. 20 x RGT orbital periods (2T_{rgt})\n' ...
+        '3. 200 x RGT orbital periods (2T_{rgt})\n' ...
         '4. 1 x Earth rotation (T_Earth)\n' ...
         'Selection (default 1): '], 's');
     

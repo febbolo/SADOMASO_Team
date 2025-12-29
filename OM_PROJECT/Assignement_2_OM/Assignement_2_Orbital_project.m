@@ -23,7 +23,7 @@ close all
 Primary.mu = astroConstants(13);
 Primary.Radius = astroConstants(23);
 Primary.mass = Primary.mu / astroConstants(1);
-Primary.J2 = astroConstants(9);Cart
+Primary.J2 = astroConstants(9);
 Primary.Initial_date_Mjd = date2mjd2000([2041, 6, 28, 22, 40, 59]); % converting in Julian the initial date to exploit it for ephmoon
 Primary.w = deg2rad(15.04)/3600;
 

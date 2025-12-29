@@ -362,8 +362,6 @@ PROP_MODE = comando_utente;
 options = odeset('RelTol',1e-13,'AbsTol',1e-13);
 
 
-
-
 % _________________ GROUND TRACK __________________
 
 % Parameters vector for perturbations
@@ -391,37 +389,37 @@ if isempty(Running)
 end
 RUN_MODE = Running;
 
-% Definizione parametri dei casi (Spostati qui per essere pronti all'uso)
+
 T_Earth = 2*pi / Primary.w;
 case_names = { ...
     '1 nominal orbital period (T_{nom})', ...
-    '1 RGT orbital period (T_{rgt})', ...
-    '2 RGT orbital periods (2T_{rgt})', ...
+    '2 RGT orbital period (T_{rgt})', ...
+    '20 RGT orbital periods (2T_{rgt})', ...
     '1 Earth rotation (T_Earth)'};
-case_Tend = [ T_nom, T_rgt, 2*T_rgt, T_Earth ]; 
+case_Tend = [ T_nom, 2*T_rgt, 20*T_rgt, T_Earth ]; 
 
 if strcmp(RUN_MODE, 'single')
-    % Richiesta del caso specifico
-    scelta = input(['Which case you want to plot?\n' ...
+
+    choice = input(['Which case you want to plot?\n' ...
         '1. 1 x nominal orbital period (T_{nom})\n' ...
-        '2. 1 x RGT orbital period (T_{rgt})\n' ...
-        '3. 2 x RGT orbital periods (2T_{rgt})\n' ...
+        '2. 2 x RGT orbital period (T_{rgt})\n' ...
+        '3. 20 x RGT orbital periods (2T_{rgt})\n' ...
         '4. 1 x Earth rotation (T_Earth)\n' ...
         'Selection (default 1): '], 's');
     
-    if isempty(scelta)
-        CASE_ID = 1; % Impostato a 1 come richiesto
+    if isempty(choice)
+        CASE_ID = 1; % default
     else
-        CASE_ID = str2double(scelta); % Converte l'input 's' in numero per l'indice
+        CASE_ID = str2double(choice); %converting string into double
     end
     
     case_list = CASE_ID;
 else
-    % Se RUN_MODE è 'all'
+    % If RUN_MODE i 'all'
     case_list = 1:4;
 end
 
-% Parametri simulazione
+% Simulation parameters
 Npts = 200000;
 options = odeset('RelTol',1e-9,'AbsTol',1e-10);
 

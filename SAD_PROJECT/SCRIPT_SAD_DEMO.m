@@ -1,10 +1,20 @@
-%% -------------- TO DO -----------------
-% ONLY SCRIPT / SIMULINK STUFF
-% 1) Cycle for B_IGRF and optimization
-% 2) (Ordering Albedo and Earth Radiation Pressure)
-% 3) Pink noise (Lowpass Filter) NOT DOING MAYBE
-% 5) Control
-% 6) Actuators
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%                                                         %%%%%%%%%
+%%%%%%%%%           SPACECRAFT ATTITUDE DYNAMICS PROJECT          %%%%%%%%%
+%%%%%%%%%                       A.A. 2025-2026                    %%%%%%%%%
+%%%%%%%%%                                                         %%%%%%%%%
+%%%%%%%%%                  GROUP 44, PROJECT N.151                %%%%%%%%%
+%%%%%%%%%                                                         %%%%%%%%%
+%%%%%%%%%                                                         %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% CONTRIBUTORS
+% Amura Fabio, 10830618, fabio.amura@mail.polimi.it
+% Crisanti Costanza, 10911209, costanza.crisanti@mail.polimi.it
+% Deli Luca 
+% Tomas (non so i cognomi)
 
 %% ------------ DATA : Earth-S/C - Sun synchronous Orbit ------------
 
@@ -14,9 +24,9 @@ close all
 
 % S/C Inertia 
 % 6U CubeSat inertia
-J_depl = [18, 0, 0;...
-          0, 12, 0;...
-          0, 0, 22]*1e-2; %kg*m^2
+J_depl = [32.08, 0, 0;...
+          0, 14.40, 0;...
+          0, 0, 18.52]*1e-2; %kg*m^2
 
 % Constants
 G = 6.67e-20; % [km^3/(kg*s^2)]
@@ -36,7 +46,7 @@ draan = 1.99096871e-7; % Sun-synchronous rate of precession of raan [rad/s]
 zp = 600; %[km]
 rp = zp + Re; %[km]
 a = rp * (1 - e);  % Semi-major axis [km]
-raan = 0;   %[deg]
+raan = 90;   %[deg]
 w = 0;     %[deg]
 theta = 0;  %[deg]
 incl = rad2deg( acos( -2/3 * (1-e^2)^2*a^(7/2) * draan / ( sqrt(mu)*J2*Re^2 ) )); %[deg]
@@ -48,8 +58,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.5; 0.5; 0.5];  %[rad/s]
-% w0 = [1e-6; 1e-6; n];  %[rad/s]
+w0 = [0.3; 0.4; 0.2];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
 kep = [a,e,incl,raan,w,theta];
@@ -250,6 +259,9 @@ t0 = 0;      %[s]
 
 %% -------------- SENSORS ------------------
 
+% Seed 
+base_seed = 12345;
+
 % Sun Sensor : Solar MEMS nanoSSOC-D60 
 % Sampling Time from data sheet 
 Sun_sensor.f = 5;     %Sampling frequency [Hz]
@@ -406,10 +418,11 @@ w_exit = deg2rad(4);  % If exceeded, from SLEW come back to DETUMBLING
 w_enter_2 = Control.w_pointing; % To exit SLEW and enter POINTING
 w_exit_2 = deg2rad(1.5); % If exceeded, from POINTING come back to SLEW
 
-% ------- Angles threshold for State Flow ------
+% ------- Thresholds for State Flow ------
 err_max    = deg2rad(15);   % angles error for POINTING
 eps_w      = deg2rad(0.1);           % tolerance on |ω|
 eps_att    = deg2rad(0.2);   % tolerance on attitude error
+eps_h_r = 0.001;              % tolerance on h_r [Nms]
 
 % ------- Dwell time ---------
 dwell_time = 30; % [s] time before switching to another MODE if conditions are satisfied
@@ -431,7 +444,7 @@ k_b = 200000;
 alpha_max = deg2rad(15); %[rad]
 % Since the slew manouvre starts right after the detumbling we consider as
 % omega_max the treshold on the detumbling case
-% Defining desired torques (see Actuators section for maximum dipole/torque):
+% Defining desired torques:
 M_RW_max = 8e-3; % [Nm]
 M_M_max = 1e-4; % [Nm]
 
@@ -440,7 +453,7 @@ u_max = [M_M_max, M_M_max, M_RW_max];
 
 Q = diag(1./(x_max).^2); 
 R = diag(1./(u_max).^2);
-   
+
 % Considering a long time of transient of P(t) matrix, P(t)≃ cost ->
 % algebraic Riccati equation 
 % The control is working at discrete time -> dlqr command is needed
@@ -462,6 +475,10 @@ Kd = K(:, 1:3); % Derivative gain matrix dim.(3x3)
 % are substituted with the correct terms due to non-small angles. 
 
 
+% -------- RW DESATURATION ----------
+h_r_max = 0.05;             % RW max angular momentum [Nms]
+h_r_safe = 0.001;              % RW safe angular momentum [Nms]
+
 %% ------------ ACTUATORS -----------------
 
 % Magnetorquers - CR0020 (X-Y axis), CR0010 (Z axis) (CubeSpace)
@@ -478,7 +495,7 @@ RW.Iw_est = RW.h_max / RW.omega_max; % kg*m^2
 RW.A = [0;0;1];
 
 
-%% -------------- PLOTS --------
+%% -------------- SIMULATION  ------------
 
 simout = sim('SIM_SAD_DEMO');
 time = simout.tout; 
@@ -502,47 +519,12 @@ u = simout.u;
 M_act = simout.M_act;
 
 
+%% ---------- PLOTS -------------
+
 % Pre-allocate Q, error and norm_error
 Q = zeros(3, 3, length(time));
 error = zeros(3, 3, length(time));
 norm_error = zeros(1, length(time));
-
-
-% % Plot the attitude error between Body Frame and Uniformly rotating LVLH
-% % Frame
-% figure('Name','Attitude Matrix A_B_LVLH Components over Time');
-% for i = 1:3
-%     for j = 1:3
-%         subplot(3, 3, (i-1)*3 + j);
-%         plot(time, squeeze(A_B_LVLH(i, j, :)), 'LineWidth', 1.5);
-%         title(['A_{' num2str(i) num2str(j) '} over Time']);
-%         xlabel('Time (s)');
-%         ylabel(['A_{' num2str(i) num2str(j) '}']);
-%         grid on;
-%     end
-% end
-
-% % Plot the error of the angular velocities (in body frame) of the absolute
-% % angular velocity wrt the LVLH angular velocity
-% figure('Name','Error on w (B wrt LVLH) over time')
-% subplot(3, 1, 1);
-% plot(time, w_B_LVLH(1,:), 'LineWidth', 1.5);
-% title('Angular Velocity in X Direction');
-% xlabel('Time (s)');
-% ylabel('error on w_x (rad/s)');
-% grid on;
-% subplot(3, 1, 2);
-% plot(time, w_B_LVLH(2,:), 'LineWidth', 1.5);
-% title('Angular Velocity in Y Direction');
-% xlabel('Time (s)');
-% ylabel('error on w_y (rad/s)');
-% grid on;
-% subplot(3, 1, 3);
-% plot(time, w_B_LVLH(3,:), 'LineWidth', 1.5);
-% title('Angular Velocity in Z Direction');
-% xlabel('Time (s)');
-% ylabel('error on w_z (rad/s)');
-% grid on;
 
 
 % Plot the attitude error matrix components over time
@@ -550,7 +532,7 @@ figure('Name','Attitude Error Matrix Components over Time');
 for i = 1:3
     for j = 1:3
         subplot(3, 3, (i-1)*3 + j);
-        plot(time, squeeze(A_e(i, j, :)), 'LineWidth', 1.5);
+        plot(time, squeeze(A_e(i, j, :)), 'LineWidth', 1);
         title(['A_{e,' num2str(i) num2str(j) '} over Time']);
         xlabel('Time (s)');
         ylabel(['A_{e,' num2str(i) num2str(j) '}']);
@@ -574,9 +556,9 @@ plot(time, norm_error)
 figure('Name','Real and Estimated Angular Velocity Components over Time');
 subplot(2, 1, 1);
 hold on;
-plot(time, w_B(1, :), 'LineWidth', 1.5, 'DisplayName', 'Real w_x');
-plot(time, w_B(2, :), 'LineWidth', 1.5, 'DisplayName', 'Real w_y');
-plot(time, w_B(3, :), 'LineWidth', 1.5, 'DisplayName', 'Real w_z');
+plot(time, w_B(1, :), 'LineWidth', 1, 'DisplayName', 'Real w_x');
+plot(time, w_B(2, :), 'LineWidth', 1, 'DisplayName', 'Real w_y');
+plot(time, w_B(3, :), 'LineWidth', 1, 'DisplayName', 'Real w_z');
 title('Real Angular Velocity Components');
 xlabel('Time (s)');
 ylabel('Angular Velocity (rad/s)');
@@ -585,9 +567,9 @@ grid on;
 hold off;
 subplot(2, 1, 2);
 hold on;
-plot(time, w_est(1, :), 'LineWidth', 1.5, 'DisplayName', 'Estimated w_x');
-plot(time, w_est(2, :), 'LineWidth', 1.5, 'DisplayName', 'Estimated w_y');
-plot(time, w_est(3, :), 'LineWidth', 1.5, 'DisplayName', 'Estimated w_z');
+plot(time, w_est(1, :), 'LineWidth', 1, 'DisplayName', 'Estimated w_x');
+plot(time, w_est(2, :), 'LineWidth', 1, 'DisplayName', 'Estimated w_y');
+plot(time, w_est(3, :), 'LineWidth', 1, 'DisplayName', 'Estimated w_z');
 title('Estimated Angular Velocity Components');
 xlabel('Time (s)');
 ylabel('Angular Velocity (rad/s)');
@@ -600,7 +582,7 @@ hold off;
 figure('Name','State Vector Components over Time');
 for i = 1:3
     subplot(2, 3, i);
-    plot(time, x(i, :), 'LineWidth', 1.5);
+    plot(time, x(i, :), 'LineWidth', 1);
     title(['Angular Velocity Component \omega_{' num2str(i) '} over Time']);
     xlabel('Time (s)');
     ylabel(['\omega_{' num2str(i) '} (rad/s)']);
@@ -608,58 +590,175 @@ for i = 1:3
 end
 for i = 4:6
     subplot(2, 3, i);
-    plot(time, x(i, :), 'LineWidth', 1.5);
+    plot(time, x(i, :), 'LineWidth', 1);
     title(['Angle Component \theta_{' num2str(i-3) '} over Time']);
     xlabel('Time (s)');
     ylabel(['\theta_{' num2str(i-3) '} (rad)']);
     grid on;
 end
 
-% Plot the ideal control torque and the actuator control torque over time
-figure('Name','Control/Actuator Torque Components over Time');
-subplot(2, 1, 1);
-hold on;
-plot(time, u(:, 1), 'LineWidth', 1.5, 'DisplayName', 'Ideal Torque M_x');
-plot(time, u(:, 2), 'LineWidth', 1.5, 'DisplayName', 'Ideal Torque M_y');
-plot(time, u(:, 3), 'LineWidth', 1.5, 'DisplayName', 'Ideal Torque M_z');
-title('Control Torque');
+% Plot the ideal control torque components over time
+figure('Name','Control Ideal Torque Components over Time');
+% u_x
+subplot(3,1,1);
+plot(time, u(:,1), 'LineWidth', 1);
+title('Ideal Torque u_x');
 xlabel('Time (s)');
-ylabel('Torque (N*m)');
-legend('show');
+ylabel('Torque (N·m)');
 grid on;
-hold off;
-subplot(2, 1, 2);
-hold on;
-plot(time, squeeze(M_act(1, :)), 'LineWidth', 1.5, 'DisplayName', 'Actuator Torque M_x');
-plot(time, squeeze(M_act(2, :)), 'LineWidth', 1.5, 'DisplayName', 'Actuator Torque M_y');
-plot(time, squeeze(M_act(3, :)), 'LineWidth', 1.5, 'DisplayName', 'Actuator Torque M_z');
-title('Actuator Torque');
+% u_y
+subplot(3,1,2);
+plot(time, u(:,2), 'LineWidth', 1);
+title('Ideal Torque u_y');
 xlabel('Time (s)');
-ylabel('Torque (N*m)');
-legend('show');
+ylabel('Torque (N·m)');
 grid on;
+% u_z
+subplot(3,1,3);
+plot(time, u(:,3), 'LineWidth', 1);
+title('Ideal Torque u_z');
+xlabel('Time (s)');
+ylabel('Torque (N·m)');
+grid on;
+
+% Plot actuator torque components over time
+figure('Name','Actuator Torque Components over Time');
+% M_x
+subplot(3,1,1);
+plot(time, squeeze(M_act(1,:)), 'LineWidth', 1);
+title('Actuator Torque M_x');
+xlabel('Time (s)');
+ylabel('Torque (N·m)');
+grid on;
+% M_y
+subplot(3,1,2);
+plot(time, squeeze(M_act(2,:)), 'LineWidth', 1);
+title('Actuator Torque M_y');
+xlabel('Time (s)');
+ylabel('Torque (N·m)');
+grid on;
+% M_z
+subplot(3,1,3);
+plot(time, squeeze(M_act(3,:)), 'LineWidth', 1);
+title('Actuator Torque M_z');
+xlabel('Time (s)');
+ylabel('Torque (N·m)');
+grid on;
+
+
+%% ---------- MONTE CARLO ANALYSIS ----------
+
+N_MC = 50;
+
+% Preallocate results
+% w_MC(sim, axis, time)
+w_MC = cell(N_MC,1);
+time_MC = cell(N_MC,1);
+
+% Save nominal values
+J_nom   = J_depl;
+w0_nom  = w0;
+a_nom   = a;
+e_nom   = e;
+incl_nom = incl;
+raan_nom = raan;
+SRP_nom = SRP;
+
+for k = 1:N_MC
+
+    fprintf('Monte Carlo run %d / %d \n', k, N_MC);
+
+    % Random seed
+    rng(k);
+    base_seed_MC = base_seed;
+    base_seed = base_seed_MC + k; 
+
+    % INERTIA (±10% sui principali, ±5% cross)
+    J_depl = J_nom .* diag(1 + 0.10*randn(3,1));
+
+    % ANGULAR VELOCITIES ±30%
+    w0 = w0_nom .* (1 + 0.30*randn(3,1));
+
+    % ORBITS UNCERTAINTIES
+    a     = a_nom    * (1 + 0.005*randn);     % ±0.5%
+    e     = max(0, e_nom + 0.001*randn);      % small variation
+    incl  = incl_nom + 0.1*randn;             % ±0.1 deg
+    raan  = raan_nom + 0.2*randn;             % ±0.2 deg
+
+    kep = [a,e,incl,raan,w,theta];
+
+    % SRP DISTURBANCES UNCERTAINTY
+    fields = fieldnames(SRP_nom);
+    for ii = 1:length(fields)
+        SRP.(fields{ii}).A = SRP_nom.(fields{ii}).A * (1 + 0.05*randn);
+        SRP.(fields{ii}).r_F = SRP_nom.(fields{ii}).r_F .* (1 + 0.10*randn(1,3));
+    end
+
+    % Simulation
+    simout = sim('SIM_SAD_DEMO','FastRestart','off');
+
+    % Saving results
+    w_MC{k} = simout.w_B;
+    time_MC{k} = simout.tout;    
+end
+
+% Creating matrix for angular velocities
+Nt = length(time_MC{1});
+w_MC_mat = zeros(N_MC,3,Nt);
+for k = 1:N_MC
+    w_MC_mat(k,:,:) = rad2deg(w_MC{k});
+end
+
+%% --------- PLOT : MONTE CARLO ANALYSIS ---------- 
+
+figure('Name','Monte Carlo Angular Velocities');
+hold on;
+N_MC = size(w_MC_mat,1);
+Nt   = size(w_MC_mat,3);
+t = time_MC{1};
+for k = 1:N_MC
+    plot(t, squeeze(w_MC_mat(k,1,:)),'LineWidth',1); % w_x
+    plot(t, squeeze(w_MC_mat(k,2,:)),'LineWidth',1); % w_y
+    plot(t, squeeze(w_MC_mat(k,3,:)),'LineWidth',1); % w_z
+end
+xlabel('Time [s]');
+ylabel('Angular velocity [deg/s]');
+title('Monte Carlo Angular Velocities (w_x, w_y, w_z)');
+grid on;
+legend({'\omega_x','\omega_y','\omega_z'});
 hold off;
 
 
-% %% ----------- SATELLITE SCENARIO ----------------
-% 
-% %Conversion a km -> m
-% a = a*1000;         %[m]
-% 
-% %Satellite Scenario 
-% stopTime = startTime + seconds(T);
-% sampleTime = 60;
-% sc = satelliteScenario(startTime,stopTime,sampleTime);
-% viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
-% sat = satellite(sc,a,e,incl,raan,w,theta);
-% show(sat)
-% sat.Visual3DModel = "SmallSat.glb";
-% coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
-% camtarget(viewer, sat);
-% groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
-% play(sc,PlaybackSpeedMultiplier=500)
-% 
-% %Conversion a m -> km
-% a = a/1000;         %[km] 
+% Restoring nominal values
+J_depl = J_nom;
+w0     = w0_nom;
+a      = a_nom;
+e      = e_nom;
+incl   = incl_nom;
+raan   = raan_nom;
+SRP    = SRP_nom;
+
+
+
+%% ----------- SATELLITE SCENARIO ----------------
+
+%Conversion a km -> m
+a = a*1000;         %[m]
+
+%Satellite Scenario 
+stopTime = startTime + seconds(2*T);
+sampleTime = 60;
+sc = satelliteScenario(startTime,stopTime,sampleTime);
+viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
+sat = satellite(sc,a,e,incl,raan,w,theta);
+show(sat)
+sat.Visual3DModel = "SmallSat.glb";
+coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
+camtarget(viewer, sat);
+groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
+play(sc,PlaybackSpeedMultiplier=500)
+
+%Conversion a m -> km
+a = a/1000;         %[km] 
 
 

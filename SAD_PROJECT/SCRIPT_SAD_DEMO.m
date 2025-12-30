@@ -58,7 +58,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.3; 0.4; 0.2];  %[rad/s]
+w0 = [0; 0; 0];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
 kep = [a,e,incl,raan,w,theta];
@@ -383,6 +383,13 @@ Filter.POINTING.omega_t = 1; %[rad/s]
 % If the maximum angular rate component detected is above the treshold : satellite is
 % tumbling, otherwise can be considered as slew-pointing phase
 
+% The bias has to be corrected too in order to avoid a too big steady state
+% error
+% Running a simulation with 0 initial angular velocity in order to find a
+% medium bias value for the gyro
+ bias_estimated = mean(w_measured);
+
+
 %% ----------- CONTROL : LQR ----------
 
 % From state space model
@@ -406,6 +413,22 @@ C = ctrb(A,B);
 rank_C = rank(C);
 disp(['The rank of matrix C is: ', num2str(rank_C),', equal to the number of states.' ...
     ' So the system is controllable.']);
+
+% Checking observability
+ C_obs = eye(6); %Output matrix C_obs
+Ob = obsv(A, C_obs);
+% Display the rank of matrix Ob
+rank_Ob = rank(Ob);
+n_states = size(A_obs, 1);
+fprintf('\n--- Observability ---\n');
+fprintf('Numero of states: %d\n', n_states);
+fprintf('Rank of observability matrix: %d\n', rank_Ob);
+if rank_Ob == n_states
+    disp('Completely observable system');
+else
+    disp('Non observable system');
+    disp('Verify availabilty of sensors or C_obs matrix definition');
+end
 
 % DEFINING THRESHOLDS FOR THE DIFFERENT CASES 
 Control.w_tumbling = deg2rad(5); % Treshold for tumbling, [rad]
@@ -437,18 +460,18 @@ dwell_time = 30; % [s] time before switching to another MODE if conditions are s
 % Gain of the B_dot : TUNING  
 k_b = 200000;
 
-% -------- SLEW / POINTING -------------
+% -------- STABILIZATION / TRACKING -------------
 
 % Bryson Method to define Q,R
 % Arbitrary choice of maximum acceptable error : ~15 deg
 alpha_max = deg2rad(15); %[rad]
-% Since the slew manouvre starts right after the detumbling we consider as
-% omega_max the treshold on the detumbling case
+% Since the slew manouvre starts right after the slew, we consider as
+% omega_max the treshold on the slew case
 % Defining desired torques:
 M_RW_max = 8e-3; % [Nm]
 M_M_max = 1e-4; % [Nm]
 
-x_max = [Control.w_tumbling,Control.w_tumbling, Control.w_tumbling, alpha_max, alpha_max, alpha_max]; 
+x_max = [Control.w_pointing,Control.w_pointing, Control.w_pointing, alpha_max, alpha_max, alpha_max]; 
 u_max = [M_M_max, M_M_max, M_RW_max];
 
 Q = diag(1./(x_max).^2); 
@@ -465,6 +488,8 @@ sysd = c2d(sysc, Ts, 'zoh');
 [K,S,P] = dlqr(sysd.A,sysd.B,Q,R);    
 % [K,S,P] = lqr(A,B,Q,R); 
  
+
+% -------SLEW MANOEUVRE / RE-POINTING------------
 % At the beginning, there are big angles variations -> an extension of
 % linear control is needed, using THE SAME GAIN MATRIX found before
 

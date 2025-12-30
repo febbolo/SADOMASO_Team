@@ -63,8 +63,9 @@ m = 5;
 
 % _________________ Ground Track __________________
 
-% Assuming Greenwich at 0 deg
-ThetaG0 = 0;
+
+GST_deg = 280.46061837 + 360.98564736629 * Primary.Initial_date_Mjd;
+ThetaG0 = mod(GST_deg * pi/180, 2*pi); 
 
 % __________________ Nominal (non-repeating) orbit __________________
 

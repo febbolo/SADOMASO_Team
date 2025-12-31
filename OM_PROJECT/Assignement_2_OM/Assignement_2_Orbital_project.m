@@ -279,7 +279,7 @@ for icase = case_list
 
     else
         plot3(r_nom(:,1), r_nom(:,2), r_nom(:,3),'LineWidth', 1.2, 'Color', 'g', 'DisplayName', 'Nominal orbit')
-        plot3(r_rgt(:,1), r_rgt(:,2), r_rgt(:,3),'LineWidth', 1.2, 'Color', 'r', 'DisplayName', 'RGT orbit')
+        % plot3(r_rgt(:,1), r_rgt(:,2), r_rgt(:,3),'LineWidth', 1.2, 'Color', 'r', 'DisplayName', 'RGT orbit')
     end
 
     xlabel('x [km]')

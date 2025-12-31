@@ -383,13 +383,6 @@ Filter.POINTING.omega_t = 1; %[rad/s]
 % If the maximum angular rate component detected is above the treshold : satellite is
 % tumbling, otherwise can be considered as slew-pointing phase
 
-% The bias has to be corrected too in order to avoid a too big steady state
-% error
-% Running a simulation with 0 initial angular velocity in order to find a
-% medium bias value for the gyro
- bias_estimated = mean(w_measured);
-
-
 %% ----------- CONTROL : LQR ----------
 
 % From state space model

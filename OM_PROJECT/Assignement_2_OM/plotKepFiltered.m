@@ -91,7 +91,7 @@ for j = 1:6
     xlabel('time [T]');
     ylabel(ylab{j});
     title(['Keplerian element: ' names{j} '  ' filterMode '']);
-    legend('Not Filtered', filterLabel, 'Secular linear trend', 'Location','best');
+    legend('Not Filtered', filterLabel, 'Secular linear trend', 'Location','south');
 
 end
 

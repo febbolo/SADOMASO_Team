@@ -63,7 +63,6 @@ m = 5;
 
 % _________________ Ground Track __________________
 
-
 GST_deg = 280.46061837 + 360.98564736629 * Primary.Initial_date_Mjd;
 ThetaG0 = mod(GST_deg * pi/180, 2*pi); 
 
@@ -190,7 +189,7 @@ end
 
 CASE_ID = 1; % Default Case ID
 if strcmpi(RUN_MODE, 'single')
-    sel_id = input('CASE_ID (1: T_nom, 2: T_rgt, 3: 2T_rgt, 4: T_Earth) [default: 1]: ', 's');
+    sel_id = input('CASE_ID (\n1: T_nom, \n2: 10*T_Earth, \n3: 2T_rgt, \n4: T_Earth, \n5: 5T_Earth) \n[default: 1]: ', 's');
     if ~isempty(sel_id)
         CASE_ID = str2double(sel_id);
     end
@@ -199,31 +198,22 @@ end
 T_Earth = 2*pi / Primary.w;     % Earth rotation period (from wE in Radians)
 case_names = { ...
     '1 nominal orbital period (T_{nom})', ...
-    '1 RGT orbital period (T_{rgt})', ...
+    '10 Earth revolutions (T_{rgt})', ...
     '2 RGT orbital periods (2T_{rgt})', ...
-    '1 Earth rotation (T_Earth)'};
+    '1 Earth rotation (TEarth)', ...
+    '5 Eart revolutions (5TEarth)'};
 
 % Same time span for BOTH orbits, depending on the selected case
-case_Tend = [ T_nom, T_rgt, 2*T_rgt, T_Earth ];
+case_Tend = [ T_nom, 10*T_Earth, 5*T_rgt, T_Earth, 5*T_Earth ];
 
 if strcmpi(RUN_MODE,'all')
-    case_list = 1:4;
+    case_list = 1:5;
 else
     case_list = CASE_ID;
 end
 
 % Number of points for propagation
-Npts = 100000;
-
-% ================== EXPORT SETTINGS ==================
-SAVE_FRAMES = true;      % <--- metti false se vuoi solo vedere l'animazione
-FPS = 15;                % fps che userai poi in LaTeX
-RES = 150;               % 150 ok, 300 più qualità (ma più pesante)
-
-BASE_OUTDIR = fullfile(pwd,'latex_frames');
-if SAVE_FRAMES && ~exist(BASE_OUTDIR,'dir')
-    mkdir(BASE_OUTDIR);
-end
+Npts = 200000;
 
 % _________________ Loop over selected cases __________________
 
@@ -256,15 +246,6 @@ for icase = case_list
     fig3D = figure;
     hold on
 
-    if SAVE_FRAMES
-        outdir3D = fullfile(BASE_OUTDIR, sprintf('case%d_3D', icase));
-
-        if ~exist(outdir3D,'dir')
-            mkdir(outdir3D);
-        end
-        frame_id_3D = 0;
-    end
-
     surf(xe, ye, ze, 'CData', earth_img, 'FaceColor','texturemap', 'EdgeColor','none', 'HandleVisibility','off');
 
     if ANIMATE_3D  % I decide each time if I want to plot or not the animation
@@ -278,8 +259,8 @@ for icase = case_list
         hDot_rgt = plot3(NaN,NaN,NaN, 'ro', 'MarkerSize', 6, 'LineWidth', 1.5, 'HandleVisibility','off');
 
     else
-        plot3(r_nom(:,1), r_nom(:,2), r_nom(:,3),'LineWidth', 1.2, 'Color', 'g', 'DisplayName', 'Nominal orbit')
-        % plot3(r_rgt(:,1), r_rgt(:,2), r_rgt(:,3),'LineWidth', 1.2, 'Color', 'r', 'DisplayName', 'RGT orbit')
+        plot3(r_nom(:,1), r_nom(:,2), r_nom(:,3),'LineWidth', 5, 'Color', 'g', 'DisplayName', 'Nominal orbit')
+        % plot3(r_rgt(:,1), r_rgt(:,2), r_rgt(:,3),'LineWidth', 5, 'Color', 'r', 'DisplayName', 'RGT orbit')
     end
 
     xlabel('x [km]')
@@ -306,9 +287,6 @@ for icase = case_list
             set(hDot_rgt, 'XData', r_rgt(kk,1), 'YData', r_rgt(kk,2), 'ZData', r_rgt(kk,3));
 
             drawnow
-        if SAVE_FRAMES
-            frame_id_3D = frame_id_3D + 1;
-            exportgraphics(fig3D, fullfile(outdir3D, sprintf('frame_%04d.jpg', frame_id_3D)),'Resolution', 80);        end
         end
     end
 
@@ -316,14 +294,6 @@ for icase = case_list
 
     figGT = figure;
     hold on
-
-    if SAVE_FRAMES
-        outdirGT = fullfile(BASE_OUTDIR, sprintf('case%d_GT', icase));
-        if ~exist(outdirGT,'dir') 
-            mkdir(outdirGT); 
-        end
-        frame_id_GT = 0;
-    end
     image(lon_img, lat_img, earth);
     set(gca,'YDir','normal');
     
@@ -334,8 +304,8 @@ for icase = case_list
         hGT_rgt = plot(NaN,NaN, 'LineStyle','none', 'Marker','.', 'Color','r', 'MarkerSize',2,'DisplayName','RGT ground track');
     
         % hDotGT_nom / hDotGT_rgt are the moving markers (current sub-satellite point)
-        hDotGT_nom = plot(NaN,NaN, 'go', 'MarkerSize',6, 'LineWidth',1.5, 'HandleVisibility','off');
-        hDotGT_rgt = plot(NaN,NaN, 'ro', 'MarkerSize',6, 'LineWidth',1.5, 'HandleVisibility','off');
+        hDotGT_nom = plot(NaN,NaN, 'go', 'MarkerSize',10, 'LineWidth',3, 'HandleVisibility','off');
+        hDotGT_rgt = plot(NaN,NaN, 'ro', 'MarkerSize',12, 'LineWidth',4, 'HandleVisibility','off');
     
     else
         plot(lon_nom, lat_nom, 'LineStyle','none', 'Marker','.', 'Color','g', 'MarkerSize',2,'DisplayName','Nominal ground track');
@@ -343,25 +313,25 @@ for icase = case_list
     end
     
     % start/end markers
-    plot(lon_nom(1),   lat_nom(1),   'go', 'MarkerSize',6, 'DisplayName','Nominal start');
-    plot(lon_nom(end), lat_nom(end), 'gx', 'MarkerSize',6, 'DisplayName','Nominal end');
+    plot(lon_nom(1),   lat_nom(1),   'go', 'MarkerSize',10, 'LineWidth', 3 ,'DisplayName','Nominal start');
+    plot(lon_nom(end), lat_nom(end), 'gx', 'MarkerSize',12, 'LineWidth',4 , 'DisplayName','Nominal end');
     
-    plot(lon_rgt(1),   lat_rgt(1),   'ro', 'MarkerSize',6, 'DisplayName','RGT start');
-    plot(lon_rgt(end), lat_rgt(end), 'rx', 'MarkerSize',6, 'DisplayName','RGT end');
+    plot(lon_rgt(1),   lat_rgt(1),   'ro', 'MarkerSize',8,'LineWidth',3,'DisplayName','RGT start');
+    plot(lon_rgt(end), lat_rgt(end), 'rx', 'MarkerSize',12,'LineWidth',4,'DisplayName','RGT end');
     
     xlabel('Longitude [deg]')
     ylabel('Latitude [deg]')
     title(['Ground Track - ' case_names{icase}])
-    legend("show", 'Location','northeastoutside')
+    legend("show", 'Location','northeast')
     xlim([-180 180]); ylim([-90 90]);
     grid on
     axis equal tight
-    
+
     if ANIMATE_GT
     
         NanimGT = min(length(lon_nom), length(lon_rgt));
     
-        % IMPORTANT: force the animation to include the LAST point (NanimGT)
+        % IMPORTANT: forcing the animation to include the LAST point (NanimGT)
         frames = unique([1:STEP_ANIM:NanimGT, NanimGT]);
     
         for kk = frames
@@ -373,17 +343,11 @@ for icase = case_list
             set(hDotGT_rgt, 'XData', lon_rgt(kk), 'YData', lat_rgt(kk));
     
             drawnow
-         if SAVE_FRAMES
-                frame_id_GT = frame_id_GT + 1;
-                exportgraphics(figGT, fullfile(outdirGT, sprintf('frame_%04d.jpg', frame_id_GT)),'Resolution', 80);
-        end
         end
     end
 end
 
-
 %% ___________________ PROPAGATION FOR THE PERTURBED CASE BY MOON AND J2____________________________
-
 
 %_____________________ SETTINGS ___________________________
 
@@ -416,7 +380,7 @@ if isempty(Animation_GT)
 end
 ANIMATE_3D = strcmp(Animation_3D, 'true');
 ANIMATE_GT = strcmp(Animation_GT, 'true');
-STEP_ANIM  = 2000;
+STEP_ANIM  = 20000;
 
 % _________________ Case selection __________________
 Running = input('do you want to plot all the case or only just one?\nWrite -single- or -all-: ', 's');
@@ -427,19 +391,19 @@ RUN_MODE = Running;
 
 
 T_Earth = 2*pi / Primary.w;
-case_names = { ...
+Pert.case_names = { ...
     '1 nominal orbital period (T_{nom})', ...
     '2 RGT orbital period (T_{rgt})', ...
-    '200 RGT orbital periods (2T_{rgt})', ...
+    '50 RGT orbital periods (2T_{rgt})', ...
     '1 Earth rotation (T_Earth)'};
-case_Tend = [ T_nom, 2*T_rgt, 200*T_rgt, T_Earth ]; 
+Pert.case_Tend = [ T_nom, 2*T_rgt, 50*T_rgt, T_Earth ]; 
 
 if strcmp(RUN_MODE, 'single')
 
     choice = input(['Which case you want to plot?\n' ...
         '1. 1 x nominal orbital period (T_{nom})\n' ...
         '2. 2 x RGT orbital period (T_{rgt})\n' ...
-        '3. 200 x RGT orbital periods (2T_{rgt})\n' ...
+        '3. 50 x RGT orbital periods (2T_{rgt})\n' ...
         '4. 1 x Earth rotation (T_Earth)\n' ...
         'Selection (default 1): '], 's');
     
@@ -449,19 +413,19 @@ if strcmp(RUN_MODE, 'single')
         CASE_ID = str2double(choice); %converting string into double
     end
     
-    case_list = CASE_ID;
+    Pert.case_list = CASE_ID;
 else
     % If RUN_MODE i 'all'
-    case_list = 1:4;
+    Pert.case_list = 1:4;
 end
 
 % Simulation parameters
 Npts = 200000;
 options = odeset('RelTol',1e-9,'AbsTol',1e-10);
 
-for icase = case_list
+for icase = Pert.case_list
 
-Tend = case_Tend(icase);
+Tend = Pert.case_Tend(icase);
 tspan = linspace(0, Tend, Npts);
 
 % _________________ PROPAGATION (BOTH ORBITS PERTURBED) __________________
@@ -469,33 +433,33 @@ tspan = linspace(0, Tend, Npts);
     if strcmpi(PROP_MODE,'cart')
     
         % __________________ NOMINAL ORBIT (CART + J2/MOON) __________________
-        [t_nom, y_nom] = ode113(@(t,s) fun_2bp_pert(t, s, @acc_pert_fun, parameters), tspan, y0_nom, options);
-        r_nom = y_nom(:,1:3);
+        [Pert.t_nom, Pert.y_nom] = ode113(@(t,s) fun_2bp_pert(t, s, @acc_pert_fun, parameters), tspan, y0_nom, options);
+        Pert.r_nom = Pert.y_nom(:,1:3);
     
         % __________________ RGT ORBIT (CART + J2/MOON) __________________
-        [t_rgt, y_rgt] = ode113(@(t,s) fun_2bp_pert(t, s, @acc_pert_fun, parameters), tspan, y0_rgt, options);
-        r_rgt = y_rgt(:,1:3);
+        [Pert.t_rgt, Pert.y_rgt] = ode113(@(t,s) fun_2bp_pert(t, s, @acc_pert_fun, parameters), tspan, y0_rgt, options);
+        Pert.r_rgt = Pert.y_rgt(:,1:3);
     
     elseif strcmpi(PROP_MODE,'gauss')
     
         % __________________ NOMINAL ORBIT (GAUSS + J2/MOON) __________________
         kep0_nom = kep_nom.'; 
-        [t_nom, kep_nom_hist] = ode113(@(t,kep) eq_motion_Gauss_J2_Moon(t, kep, @acc_pert_fun, parameters), tspan, kep0_nom, options);
+        [Pert.t_nom, Pert.kep_nom_hist] = ode113(@(t,kep) eq_motion_Gauss_J2_Moon(t, kep, @acc_pert_fun, parameters), tspan, kep0_nom, options);
     
-        r_nom = zeros(length(t_nom),3);
-        for iStep = 1:length(t_nom)
-            [r_tmp, ~] = Kep2Car_vec(kep_nom_hist(iStep,:), Primary.mu);
-            r_nom(iStep,:) = r_tmp.';
+        Pert.r_nom = zeros(length(Pert.t_nom),3);
+        for iStep = 1:length(Pert.t_nom)
+            [r_tmp, ~] = Kep2Car_vec(Pert.kep_nom_hist(iStep,:), Primary.mu);
+            Pert.r_nom(iStep,:) = r_tmp.';
         end
     
         % __________________ RGT ORBIT (GAUSS + J2/MOON) __________________
         kep0_rgt = kep_rgt.'; 
-        [t_rgt, kep_rgt_hist] = ode113(@(t,kep) eq_motion_Gauss_J2_Moon(t, kep, @acc_pert_fun, parameters), tspan, kep0_rgt, options);
+        [Pert.t_rgt, Pert.kep_rgt_hist] = ode113(@(t,kep) eq_motion_Gauss_J2_Moon(t, kep, @acc_pert_fun, parameters), tspan, kep0_rgt, options);
     
-        r_rgt = zeros(length(t_rgt),3);
-        for iStep = 1:length(t_rgt)
-            [r_tmp, ~] = Kep2Car_vec(kep_rgt_hist(iStep,:), Primary.mu);
-            r_rgt(iStep,:) = r_tmp.';
+        Pert.r_rgt = zeros(length(Pert.t_rgt),3);
+        for iStep = 1:length(Pert.t_rgt)
+            [r_tmp, ~] = Kep2Car_vec(Pert.kep_rgt_hist(iStep,:), Primary.mu);
+            Pert.r_rgt(iStep,:) = r_tmp.';
         end
     
     else
@@ -504,8 +468,8 @@ tspan = linspace(0, Tend, Npts);
 
     % _________________ Ground track computation __________________
     % Ground_track returns lon/lat already in degrees and wrapped, so DO NOT unwrap/mod/jump/NaN here.
-    [~, ~, lon_nom, lat_nom] = Ground_track(t_nom, r_nom, ThetaG0, t_nom(1), Primary.w);
-    [~, ~, lon_rgt, lat_rgt] = Ground_track(t_rgt, r_rgt, ThetaG0, t_rgt(1), Primary.w);
+    [~, ~, Pert.lon_nom, Pert.lat_nom] = Ground_track(Pert.t_nom, Pert.r_nom, ThetaG0, Pert.t_nom(1), Primary.w);
+    [~, ~, Pert.lon_rgt, Pert.lat_rgt] = Ground_track(Pert.t_rgt, Pert.r_rgt, ThetaG0, Pert.t_rgt(1), Primary.w);
 
 
 
@@ -514,7 +478,7 @@ tspan = linspace(0, Tend, Npts);
 
     % close all
     figSYNC = figure;
-    set(figSYNC, 'Name', ['Case - ' case_names{icase}]);
+    set(figSYNC, 'Name', ['Case - ' Pert.case_names{icase}]);
     
     % __________________ FIGURE LAYOUT (TWO AXES MANUAL) ____________________
     
@@ -535,17 +499,17 @@ tspan = linspace(0, Tend, Npts);
     axis equal
     grid on
     view(3);
-    title(['3D Orbits - ' case_names{icase}])
+    title(['3D Orbits - ' Pert.case_names{icase}])
     
     % ___________________ NOMINAL ORBIT (TIME COLORED) ___________________
     if ANIMATE_3D
         h_nom = surface(NaN,NaN,NaN,NaN, 'FaceColor','none', 'EdgeColor','interp', 'LineWidth', 1.2, 'DisplayName', 'Nominal orbit (small perturbed)');
         hDot_nom = plot3(NaN,NaN,NaN, 'go', 'MarkerSize', 6, 'LineWidth', 1.5, 'HandleVisibility','off');    
     else   
-        Xn = [r_nom(:,1), r_nom(:,1)];
-        Yn = [r_nom(:,2), r_nom(:,2)];
-        Zn = [r_nom(:,3), r_nom(:,3)];
-        Cn = [t_nom, t_nom];
+        Xn = [Pert.r_nom(:,1), Pert.r_nom(:,1)];
+        Yn = [Pert.r_nom(:,2), Pert.r_nom(:,2)];
+        Zn = [Pert.r_nom(:,3), Pert.r_nom(:,3)];
+        Cn = [Pert.t_nom, Pert.t_nom];
         surface(Xn, Yn, Zn, Cn, 'FaceColor','none', 'EdgeColor','interp', 'LineWidth', 1.2, 'DisplayName','Nominal orbit (small perturbed)');
     end
        
@@ -556,10 +520,10 @@ tspan = linspace(0, Tend, Npts);
         hDot_rgt = plot3(NaN,NaN,NaN, 'ro', 'MarkerSize', 6, 'LineWidth', 1.5, 'HandleVisibility','off');  
     else
     
-        Xr = [r_rgt(:,1), r_rgt(:,1)];
-        Yr = [r_rgt(:,2), r_rgt(:,2)];
-        Zr = [r_rgt(:,3), r_rgt(:,3)];
-        Cr = [t_rgt, t_rgt];
+        Xr = [Pert.r_rgt(:,1), Pert.r_rgt(:,1)];
+        Yr = [Pert.r_rgt(:,2), Pert.r_rgt(:,2)];
+        Zr = [Pert.r_rgt(:,3), Pert.r_rgt(:,3)];
+        Cr = [Pert.t_rgt, Pert.t_rgt];
         surface(Xr, Yr, Zr, Cr, 'FaceColor','none', 'EdgeColor','interp', 'LineWidth',2, 'DisplayName','RGT orbit (perturbed) - time colored');
     
     end    
@@ -579,7 +543,7 @@ tspan = linspace(0, Tend, Npts);
     
     xlabel('Longitude [deg]')
     ylabel('Latitude [deg]')
-    title(['Ground Track - ' case_names{icase}])
+    title(['Ground Track - ' Pert.case_names{icase}])
     xlim([-180 180]); ylim([-90 90]);
     grid on
     axis equal tight
@@ -593,25 +557,25 @@ tspan = linspace(0, Tend, Npts);
     
     else
     
-        plot(lon_nom, lat_nom,'LineStyle','none', 'Marker','.', 'Color','g', 'MarkerSize',2,'DisplayName','Nominal ground track (perturbed)');
-        plot(lon_rgt, lat_rgt,'LineStyle','none', 'Marker','.', 'Color','r', 'MarkerSize',2,'DisplayName','RGT ground track (perturbed)');
+        plot(Pert.lon_nom, Pert.lat_nom,'LineStyle','none', 'Marker','.', 'Color','g', 'MarkerSize',2,'DisplayName','Nominal ground track (perturbed)');
+        plot(Pert.lon_rgt, Pert.lat_rgt,'LineStyle','none', 'Marker','.', 'Color','r', 'MarkerSize',2,'DisplayName','RGT ground track (perturbed)');
     
     end
     
-    plot(lon_nom(1), lat_nom(1), 'go', 'MarkerSize',6, 'DisplayName','Nominal start');
-    plot(lon_nom(end), lat_nom(end), 'gx', 'MarkerSize',6, 'DisplayName','Nominal end');
+    plot(Pert.lon_nom(1), Pert.lat_nom(1), 'go', 'MarkerSize',10, 'LineWidth', 3,'DisplayName','Nominal start');
+    plot(Pert.lon_nom(end), Pert.lat_nom(end), 'gx', 'MarkerSize',12, 'LineWidth', 4,'DisplayName','Nominal end');
     
-    plot(lon_rgt(1), lat_rgt(1), 'ro', 'MarkerSize',6, 'DisplayName','RGT start');
-    plot(lon_rgt(end), lat_rgt(end), 'rx', 'MarkerSize',6, 'DisplayName','RGT end');
+    plot(Pert.lon_rgt(1), Pert.lat_rgt(1), 'ro', 'MarkerSize',10,'LineWidth', 3, 'DisplayName','RGT start');
+    plot(Pert.lon_rgt(end), Pert.lat_rgt(end), 'rx', 'MarkerSize',12, 'LineWidth', 4, 'DisplayName','RGT end');
     
     legend(axGT, "show", 'Location','northoutside')
         
-    % =========================== SYNC ANIMATION% ============================  I want them going together
+    % =========================== SYNC ANIMATION ============================  I want them going together
     
     if ANIMATE_3D || ANIMATE_GT
     
-        Nanim3D = min(size(r_nom,1), size(r_rgt,1));
-        NanimGT = min(length(lon_nom), length(lon_rgt));
+        Nanim3D = min(size(Pert.r_nom,1), size(Pert.r_rgt,1));
+        NanimGT = min(length(Pert.lon_nom), length(Pert.lon_rgt));
         NanimALL = min(Nanim3D, NanimGT);
     
         frames = unique([1:STEP_ANIM:NanimALL, NanimALL]);
@@ -620,36 +584,36 @@ tspan = linspace(0, Tend, Npts);
     
             if ANIMATE_3D
                 % --- Aggiornamento ORBITA NOMINALE ---
-                Xn = [r_nom(1:kk,1), r_nom(1:kk,1)];
-                Yn = [r_nom(1:kk,2), r_nom(1:kk,2)];
-                Zn = [r_nom(1:kk,3), r_nom(1:kk,3)];
-                Cn = [t_nom(1:kk), t_nom(1:kk)];
+                Xn = [Pert.r_nom(1:kk,1), Pert.r_nom(1:kk,1)];
+                Yn = [Pert.r_nom(1:kk,2), Pert.r_nom(1:kk,2)];
+                Zn = [Pert.r_nom(1:kk,3), Pert.r_nom(1:kk,3)];
+                Cn = [Pert.t_nom(1:kk), Pert.t_nom(1:kk)];
                 set(h_nom, 'XData', Xn, 'YData', Yn, 'ZData', Zn, 'CData', Cn); % Aggiorno la superficie nominale
                 
-                set(hDot_nom, 'XData', r_nom(kk,1), 'YData', r_nom(kk,2), 'ZData', r_nom(kk,3));
+                set(hDot_nom, 'XData', Pert.r_nom(kk,1), 'YData', Pert.r_nom(kk,2), 'ZData', Pert.r_nom(kk,3));
             
                 % --- Aggiornamento ORBITA RGT ---
-                Xr = [r_rgt(1:kk,1), r_rgt(1:kk,1)];
-                Yr = [r_rgt(1:kk,2), r_rgt(1:kk,2)];
-                Zr = [r_rgt(1:kk,3), r_rgt(1:kk,3)];
-                Cr = [t_rgt(1:kk), t_rgt(1:kk)];
+                Xr = [Pert.r_rgt(1:kk,1), Pert.r_rgt(1:kk,1)];
+                Yr = [Pert.r_rgt(1:kk,2), Pert.r_rgt(1:kk,2)];
+                Zr = [Pert.r_rgt(1:kk,3), Pert.r_rgt(1:kk,3)];
+                Cr = [Pert.t_rgt(1:kk), Pert.t_rgt(1:kk)];
                 set(hSurfRGT, 'XData', Xr, 'YData', Yr, 'ZData', Zr, 'CData', Cr);
             
-                set(hDot_rgt, 'XData', r_rgt(kk,1), 'YData', r_rgt(kk,2), 'ZData', r_rgt(kk,3));
+                set(hDot_rgt, 'XData', Pert.r_rgt(kk,1), 'YData', Pert.r_rgt(kk,2), 'ZData', Pert.r_rgt(kk,3));
             end
 
             if ANIMATE_GT
     
-                set(hGT_nom, 'XData', lon_nom(1:kk), 'YData', lat_nom(1:kk));
-                set(hGT_rgt, 'XData', lon_rgt(1:kk), 'YData', lat_rgt(1:kk));
-                set(hDotGT_nom, 'XData', lon_nom(kk), 'YData', lat_nom(kk));
-                set(hDotGT_rgt, 'XData', lon_rgt(kk), 'YData', lat_rgt(kk));
-            end
-    
+                set(hGT_nom, 'XData', Pert.lon_nom(1:kk), 'YData', Pert.lat_nom(1:kk));
+                set(hGT_rgt, 'XData', Pert.lon_rgt(1:kk), 'YData', Pert.lat_rgt(1:kk));
+                set(hDotGT_nom, 'XData', Pert.lon_nom(kk), 'YData', Pert.lat_nom(kk));
+                set(hDotGT_rgt, 'XData', Pert.lon_rgt(kk), 'YData', Pert.lat_rgt(kk));
+            end 
             drawnow % imposing the drawing while calculating instead then at teh end
         end
     end
 end
+
 
 
 %% _______________ ANALISING KEPLERIAN ELEMENT PLOTTED WITH PERTURBATIONS___________________
@@ -679,6 +643,9 @@ kep0 = kep;
 [t, cart.y] = ode89(@(t,s) fun_2bp_pert(t, s, @acc_pert_fun, parameters), Tspan, s0, options);
 [t, gauss.kep] = ode89( @(t,kep) eq_motion_Gauss_J2_Moon(t, kep, @acc_pert_fun, parameters), Tspan, kep0, options);
 
+
+tau = t / T;
+
 % Post processing for the verifications
 
 cart.r= cart.y(:,1:3);
@@ -689,14 +656,22 @@ cart.v = cart.y(:,4:6);
 X = [cart.r(:,1), cart.r(:,1)];
 Y = [cart.r(:,2), cart.r(:,2)];
 Z = [cart.r(:,3), cart.r(:,3)];
-C = [t, t];
+C = [tau, tau];
 
 figure
 hold on
 surf(xe, ye, ze,'CData', earth_img,'FaceColor','texturemap',EdgeColor='none',HandleVisibility='off');
 surface(X, Y, Z, C, 'FaceColor','none','EdgeColor','interp','LineWidth',2)
 colormap("parula");
-colorbar;
+colorbar('southoutside');
+% Forcing the position for better Latex Plots
+ax  = gca;
+clb = get(ax,'Colorbar');
+ax.Position = [0.08 0.15 0.86 0.78];
+clb.Position(4) = 0.03;                   
+clb.Position(3) = 0.50;                   
+clb.Position(1) = 0.25;                   
+clb.Position(2) = 0.06;
 xlabel('X [km]')
 ylabel('Y [km]')
 zlabel('Z [km]')
@@ -718,18 +693,26 @@ end
 X = [r_plot_try(1,:).', r_plot_try(1,:).'];  % N×2
 Y = [r_plot_try(2,:).', r_plot_try(2,:).'];  % N×2
 Z = [r_plot_try(3,:).', r_plot_try(3,:).'];  % N×2
-C = [t, t];                                            % N×2
+C = [tau, tau];                                            % N×2
 
 figure
 surface(X, Y, Z, C, 'FaceColor','none','EdgeColor','interp','LineWidth',2);
 hold on
 surf(xe, ye, ze,'CData', earth_img,'FaceColor','texturemap',EdgeColor='none',HandleVisibility='off');
 colormap("parula");
-colorbar;
+colorbar('southoutside');
+% Forcing the position for better Latex Plots
+ax  = gca;
+clb = get(ax,'Colorbar');
+ax.Position = [0.08 0.15 0.86 0.78];
+clb.Position(4) = 0.03;                   
+clb.Position(3) = 0.50;                   
+clb.Position(1) = 0.25;                   
+clb.Position(2) = 0.06;
 xlabel('X [km]')
 ylabel('Y [km]')
 zlabel('Z [km]')
-title('Comparison: Propagation with Keplerian element')
+title('Propagation with Keplerian element')
 axis equal 
 grid on
 view(3)
@@ -745,7 +728,6 @@ end
 
 % For filtering
 
-tau = t / T;
 N = length(tau);
 ptsPerOrbit = round(N / n_periods);
 w = ptsPerOrbit;
@@ -786,8 +768,8 @@ for j=1:6
     kep_from_cart_filt_plot(:,j) = movmean(kep_from_cart_plot(:,j), w, 'Endpoints','shrink');
 end
 
-names  = {'a','e','i','\Omega','\omega','f'};
-yfull  = {'a [km]','e [-]','i [deg]','Raan [deg]','\omega [deg]','f [deg]'};
+names  = {'a','e','i','Raan','omega','f'};
+yfull  = {'a [km]','e [-]','i [deg]','Raan [deg]','omega [deg]','f [deg]'};
 yerr   = {'|a_{cart}-a_{Gauss}|/a_0 [-]', ...
           '|e_{cart}-e_{Gauss}|/(2\pi) [-]', ...
           '|i_{cart}-i_{Gauss}|/(2\pi) [-]', ...
@@ -812,11 +794,17 @@ for j = 1:6
     plot(tau, gauss_kep_plot(:,j), 'LineWidth', 1.0);
     plot(tau, kep_from_cart_plot(:,j), 'LineWidth', 1.0);
     plot(tau, kep_from_cart_filt_plot(:,j), 'LineWidth', 1.2);
+    % --- plotting the trend exploiting the interpolated polynomial, to
+    % better show
+    % ---- secular trend line (linear fit) ----
+    p = polyfit(tau(:), kep_from_cart_filt_plot(:,j), 1);
+    trend = polyval(p, tau);
+    plot(tau, trend, 'LineWidth', 1);
     grid on;
     xlabel('time [T]');
     ylabel(yfull{j});
-    title(['Evolution of ' names{j} ' (0–100T)']);
-    legend('Gauss equations','Cartesian','Secular (filtered)','Location','best');
+    title(['Evolution of ' names{j} ' (0–200T)']);
+    legend('Gauss equations','Cartesian','Secular (filtered)','Trend','Location','south');
 
     % --- zoom 0–10T
     figure('Name', ['Sample results - zoom - ' names{j}]);
@@ -829,7 +817,7 @@ for j = 1:6
     xlabel('time [T]');
     ylabel(yfull{j});
     title(['Evolution of ' names{j} ' (0–10T)']);
-    legend('Gauss equations','Cartesian','Secular (filtered)','Location','best');
+    legend('Gauss equations','Cartesian','Secular (filtered)','Location','south');
 
 end
 
@@ -913,7 +901,6 @@ COSMOS.Raanvec=deg2rad(A.data(:,4));
 COSMOS.omegavec=deg2rad(A.data(:,5));
 COSMOS.theta0vec=deg2rad(A.data(:,9));
 COSMOS.avec=A.data(:,10);
-
 COSMOS.e0=A.data(1,1);
 COSMOS.i0=deg2rad(A.data(1,3));
 COSMOS.Raan0=deg2rad(A.data(1,4));
@@ -923,8 +910,6 @@ COSMOS.a0=A.data(1,10);
 COSMOS.kep0 = [COSMOS.a0, COSMOS.e0, COSMOS.i0, COSMOS.Raan0, COSMOS.omega0, COSMOS.theta00];
 
 [COSMOS.r0,COSMOS.v0] = Kep2Car_vec(COSMOS.kep0, Primary.mu);
-
-
 
 r=[];
 v=[];
@@ -1033,13 +1018,6 @@ view(3)
 
 kepNORAD = [NORAD.avec, NORAD.evec, NORAD.ivec, NORAD.Raanvec, NORAD.omegavec, NORAD.theta0vec];
 plotKepFiltered(NORAD.tvec, kepNORAD, Primary.mu, "secular");
-
-
-
-
-
-
-
 
 
 % Sec

@@ -1,21 +1,50 @@
 function kep = car2kep(r, v, mu)
-%CAR2KEP Convert Cartesian state to classical Keplerian elements.
+%CAR2KEP Conversion from Cartesian state to Keplerian elements.
 %
-% INPUT:
-%   r  [3x1] position (km)
-%   v  [3x1] velocity (km/s)
-%   mu [1x1] gravitational parameter (km^3/s^2)
+%   kep = car2kep(r, v, mu)
 %
-% OUTPUT:
-%   kep = [a; e; i; Omega; omega; f]
-%     a     semi-major axis (km)
-%     e     eccentricity (-)
-%     i     inclination (rad)
-%     Omega RAAN (rad)
-%     omega argument of perigee (rad)
-%     f     true anomaly (rad)
+% PROTOTYPE
+%   kep = car2kep(r, v, mu)
+%
+% DESCRIPTION
+%   This function converts a Cartesian state vector (position and velocity)
+%   expressed in an inertial reference frame into the corresponding set of
+%   classical Keplerian orbital elements.
+%   The computation is based on the standard vector formulation involving
+%   the specific angular momentum, node vector, and eccentricity vector.
+%   Special cases such as circular and/or equatorial orbits are handled by
+%   assigning conventional values to the undefined angular elements.
+%
+% INPUT
+%   r   [3x1] Position vector in inertial reference frame                [km]
+%   v   [3x1] Velocity vector in inertial reference frame                [km/s]
+%   mu  [1x1] Gravitational parameter of the central body                [km^3/s^2]
+%
+% OUTPUT
+%   kep [6x1] Vector of Keplerian elements:
+%             kep(1) = a     Semi-major axis                             [km]
+%             kep(2) = e     Eccentricity                                [-]
+%             kep(3) = i     Inclination                                 [rad]
+%             kep(4) = Omega Right ascension of the ascending node       [rad]
+%             kep(5) = omega Argument of pericenter                      [rad]
+%             kep(6) = f     True anomaly (or argument of latitude for
+%                            circular orbits)                            [rad]
+%
+% ASSUMPTIONS
+%   - Two-body Keplerian motion.
+%   - Inertial reference frame centered at the central body.
+%   - Elliptic orbits are expected (parabolic case handled but not nominal).
+%   - For circular and/or equatorial orbits, undefined angular elements
+%     are set according to standard conventions.
+%
+% CONTRIBUTORS
+%   Luca Deli
+%
+% VERSION
+%   2026-01-03
 
-    r = r(:); v = v(:);
+    r = r(:); 
+    v = v(:);
 
     rnorm = norm(r);
     vnorm = norm(v);

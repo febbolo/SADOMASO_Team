@@ -14,7 +14,7 @@
 % Amura Fabio, 10830618, fabio.amura@mail.polimi.it
 % Crisanti Costanza, 10911209, costanza.crisanti@mail.polimi.it
 % Deli Luca 
-% Tomas (non so i cognomi)
+% Tomás Fadista, 11027292, tomas.nascimentodasilva@mail.polimi.it
 
 %% ------------ DATA : Earth-S/C - Sun synchronous Orbit ------------
 
@@ -383,13 +383,6 @@ Filter.POINTING.omega_t = 1; %[rad/s]
 % If the maximum angular rate component detected is above the treshold : satellite is
 % tumbling, otherwise can be considered as slew-pointing phase
 
-% The bias has to be corrected too in order to avoid a too big steady state
-% error
-% Running a simulation with 0 initial angular velocity in order to find a
-% medium bias value for the gyro
- bias_estimated = mean(w_measured);
-
-
 %% ----------- CONTROL : LQR ----------
 
 % From state space model
@@ -415,11 +408,11 @@ disp(['The rank of matrix C is: ', num2str(rank_C),', equal to the number of sta
     ' So the system is controllable.']);
 
 % Checking observability
- C_obs = eye(6); %Output matrix C_obs
+C_obs = eye(6); %Output matrix C_obs
 Ob = obsv(A, C_obs);
 % Display the rank of matrix Ob
 rank_Ob = rank(Ob);
-n_states = size(A_obs, 1);
+n_states = size(A, 1);
 fprintf('\n--- Observability ---\n');
 fprintf('Numero of states: %d\n', n_states);
 fprintf('Rank of observability matrix: %d\n', rank_Ob);

@@ -35,10 +35,10 @@ function [r0, v0] = Kep2Car_vec(kep, mu)
 %   - Inertial reference frame
 %
 % CONTRIBUTORS
-%   Lorenzo Tordi
+%   Luca Deli
 %
 % VERSION
-%   2025-03-xx
+%   2025-11-03
 %
 
 % -------------------------------------------------------------------------

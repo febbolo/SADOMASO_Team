@@ -25,8 +25,8 @@ close all
 % S/C Inertia 
 % 6U CubeSat inertia
 J_depl = [32.08, 0, 0;...
-          0, 14.40, 0;...
-          0, 0, 18.52]*1e-2; %kg*m^2
+          0, 14.21, 0;...
+          0, 0, 44.67]*1e-2; %kg*m^2
 
 % Constants
 G = 6.67e-20; % [km^3/(kg*s^2)]

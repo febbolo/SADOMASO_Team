@@ -14,7 +14,7 @@
 % Amura Fabio, 10830618, fabio.amura@mail.polimi.it
 % Crisanti Costanza, 10911209, costanza.crisanti@mail.polimi.it
 % Deli Luca 
-% Tomas (non so i cognomi)
+% Tomás Fadista, 11027292, tomas.nascimentodasilva@mail.polimi.it
 
 %% ------------ DATA : Earth-S/C - Sun synchronous Orbit ------------
 
@@ -408,11 +408,11 @@ disp(['The rank of matrix C is: ', num2str(rank_C),', equal to the number of sta
     ' So the system is controllable.']);
 
 % Checking observability
- C_obs = eye(6); %Output matrix C_obs
+C_obs = eye(6); %Output matrix C_obs
 Ob = obsv(A, C_obs);
 % Display the rank of matrix Ob
 rank_Ob = rank(Ob);
-n_states = size(A_obs, 1);
+n_states = size(A, 1);
 fprintf('\n--- Observability ---\n');
 fprintf('Numero of states: %d\n', n_states);
 fprintf('Rank of observability matrix: %d\n', rank_Ob);

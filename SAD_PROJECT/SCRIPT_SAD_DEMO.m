@@ -516,28 +516,28 @@ RW.A = [0;0;1];
 %% -------------- SIMULATION  ------------
 
 simout = sim('SIM_SAD_DEMO');
-time = simout.tout; 
+time = simout.tout;
+discrete_time_row = time(1):q.Ts:time(end);
+discrete_time = discrete_time_row';
 A_B_N = simout.A_B_N;
 A_B_N_ortho = simout.A_B_N_ortho;
 A_B_LVLH = simout.A_B_LVLH;
 w_B_LVLH = simout.w_B_LVLH;
 
-
-% Real Angular velocity vector 
+% Real Angular velocity vector (continuous) 
 w_B = simout.w_B;
-% Estimated angular velcity vector
+% Estimated angular velcity vector (discrete)
 w_est = simout.w_est; 
-% Estimated Attitude Error Matrix
+% Estimated Attitude Error Matrix (discrete)  
 A_e = simout.A_e;
-% State Space vector 
+% State Space vector (discrete)
 x = simout.x;
-% Ideal control torque  
+% Ideal control torque (discrete) 
 u = simout.u;
-% Actuators real torque 
+% Actuators real torque (continuous)
 M_act = simout.M_act;
-% Quaternion's attitude error
+% Quaternion's attitude error (discrete)
 q_err = simout.q_err;
-
 
 %% ---------- PLOTS -------------
 
@@ -546,13 +546,12 @@ Q = zeros(3, 3, length(time));
 error = zeros(3, 3, length(time));
 norm_error = zeros(1, length(time));
 
-
 % Plot the attitude error matrix components over time
 figure('Name','Attitude Error Matrix Components over Time');
 for i = 1:3
     for j = 1:3
         subplot(3, 3, (i-1)*3 + j);
-        plot(time, squeeze(A_e(i, j, :)), 'LineWidth', 1);
+        plot(discrete_time, squeeze(A_e(i, j, :)), 'LineWidth', 1);
         title(['A_{e,' num2str(i) num2str(j) '} over Time']);
         xlabel('Time (s)');
         ylabel(['A_{e,' num2str(i) num2str(j) '}']);
@@ -560,9 +559,8 @@ for i = 1:3
     end
 end
 
-
 % Testing Orthonormality of A_e
-for i = 1:length(time)
+for i = 1:length(discrete_time)
     Q(:,:,i) = A_e(:,:,i)'*A_e(:,:,i);
     error(:,:,i) = abs(eye(3)-Q(:,:,i));
     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
@@ -602,7 +600,7 @@ hold off;
 figure('Name','State Vector Components over Time');
 for i = 1:3
     subplot(2, 3, i);
-    plot(time, x(i, :), 'LineWidth', 1);
+    plot(discrete_time, x(i, :), 'LineWidth', 1);
     title(['Angular Velocity Component \omega_{' num2str(i) '} over Time']);
     xlabel('Time (s)');
     ylabel(['\omega_{' num2str(i) '} (rad/s)']);
@@ -610,7 +608,7 @@ for i = 1:3
 end
 for i = 4:6
     subplot(2, 3, i);
-    plot(time, x(i, :), 'LineWidth', 1);
+    plot(discrete_time, x(i, :), 'LineWidth', 1);
     title(['Angle Component \theta_{' num2str(i-3) '} over Time']);
     xlabel('Time (s)');
     ylabel(['\theta_{' num2str(i-3) '} (rad)']);
@@ -621,21 +619,21 @@ end
 figure('Name','Control Ideal Torque Components over Time');
 % u_x
 subplot(3,1,1);
-plot(time, u(:,1), 'LineWidth', 1);
+plot(discrete_time, u(:,1), 'LineWidth', 1);
 title('Ideal Torque u_x');
 xlabel('Time (s)');
 ylabel('Torque (N·m)');
 grid on;
 % u_y
 subplot(3,1,2);
-plot(time, u(:,2), 'LineWidth', 1);
+plot(discrete_time, u(:,2), 'LineWidth', 1);
 title('Ideal Torque u_y');
 xlabel('Time (s)');
 ylabel('Torque (N·m)');
 grid on;
 % u_z
 subplot(3,1,3);
-plot(time, u(:,3), 'LineWidth', 1);
+plot(discrete_time, u(:,3), 'LineWidth', 1);
 title('Ideal Torque u_z');
 xlabel('Time (s)');
 ylabel('Torque (N·m)');
@@ -670,7 +668,7 @@ q4_err = q_err(:,4);
 theta_deg = rad2deg(2*acos(q4_err)) - 180;
 
 figure('Name','Pointing error over time');
-plot(time, theta_deg, 'LineWidth', 1);
+plot(discrete_time, theta_deg, 'LineWidth', 1);
 title('Pointing Error vs Time');
 xlabel('Time (s)');
 ylabel('\Delta\theta_{point} [deg]');
@@ -679,7 +677,7 @@ grid on;
 
 %% ---------- MONTE CARLO ANALYSIS ----------
 
-N_MC = 50;
+N_MC = 2;
 
 % Preallocate results
 % w_MC(sim, axis, time)

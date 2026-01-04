@@ -535,6 +535,8 @@ x = simout.x;
 u = simout.u;
 % Actuators real torque 
 M_act = simout.M_act;
+% Quaternion's attitude error
+q_err = simout.q_err;
 
 
 %% ---------- PLOTS -------------
@@ -661,6 +663,17 @@ plot(time, squeeze(M_act(3,:)), 'LineWidth', 1);
 title('Actuator Torque M_z');
 xlabel('Time (s)');
 ylabel('Torque (N·m)');
+grid on;
+
+% Plot poiting error over time
+q4_err = q_err(:,4);
+theta_deg = rad2deg(2*acos(q4_err)) - 180;
+
+figure('Name','Pointing error over time');
+plot(time, theta_deg, 'LineWidth', 1);
+title('Pointing Error vs Time');
+xlabel('Time (s)');
+ylabel('\Delta\theta_{point} [deg]');
 grid on;
 
 

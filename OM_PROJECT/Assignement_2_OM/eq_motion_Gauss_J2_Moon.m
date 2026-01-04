@@ -1,53 +1,51 @@
-function plotKepFiltered(t, kep, mu, filterMode)
-%PLOTKEPFILTERED Plot Keplerian element evolution (raw vs filtered) and secular trend.
+function dkep = eq_motion_Gauss_J2_Moon(t, kep, acc_pert_fun, parameters)
+
+%EQ_MOTION_GAUSS_J2_MOON Gauss planetary equations (RSW) for perturbed orbits.
 %
-%   plotKepFiltered(t, kep, mu, filterMode)
+%   dkep = eq_motion_Gauss_J2_Moon(t, kep, acc_pert_fun, parameters)
 %
 % PROTOTYPE
-%   plotKepFiltered(t, kep, mu, filterMode)
+%   dkep = eq_motion_Gauss_J2_Moon(t, kep, acc_pert_fun, parameters)
 %
 % DESCRIPTION
-%   This function visualises the time history of the six classical Keplerian
-%   elements provided as a time series. The elements are plotted both in
-%   their processed (continuous-angle) form and after low-pass filtering via
-%   a moving average (movmean), in order to separate short-period
-%   oscillations from long-period and/or secular behaviour.
-%   A linear fit is also computed on the filtered signal to highlight the
-%   mean secular trend over the selected time span. Time is normalised by
-%   the orbital period computed from the initial semi-major axis.
-%   The filtering window is selected according to the user-defined
-%   filterMode to emphasise either secular evolution, abrupt events, or a
-%   compromise between the two.
+%   This function defines the Gauss planetary equations for the propagation
+%   of classical Keplerian elements under generic perturbations.
+%   The perturbing acceleration is provided in the inertial frame (ECI)
+%   through the function handle acc_pert_fun and is projected into the local
+%   Radial-Transverse-Out-of-plane (RSW) frame built from the instantaneous
+%   osculating state (r,v). The resulting RSW components (a_r, a_s, a_w) are
+%   used to compute the time derivatives of the Keplerian elements.
+%   The function is intended for perturbation models including, e.g., Earth
+%   oblateness (J2) and third-body gravity (Moon/Sun), as implemented inside
+%   acc_pert_fun.
 %
 % INPUT
-%   t          [Nx1] Time vector                                     [s]
-%   kep        [Nx6] Keplerian element history:
-%                   kep(:,1) = a     Semi-major axis                 [km]
-%                   kep(:,2) = e     Eccentricity                    [-]
-%                   kep(:,3) = i     Inclination                     [rad]
-%                   kep(:,4) = Omega RAAN                            [rad]
-%                   kep(:,5) = omega Argument of pericenter          [rad]
-%                   kep(:,6) = f     True anomaly                    [rad]
+%   t           [1x1] Time from initial epoch                               [s]
+%   kep         [6x1] Keplerian elements:
+%                     kep(1) = a     Semi-major axis                        [km]
+%                     kep(2) = e     Eccentricity                           [-]
+%                     kep(3) = i     Inclination                            [rad]
+%                     kep(4) = Raan  Right ascension of AN                  [rad]
+%                     kep(5) = omega Argument of pericenter                 [rad]
+%                     kep(6) = f     True anomaly                           [rad]
 %
-%   mu         [1x1] Gravitational parameter of the central body     [km^3/s^2]
+%   acc_pert_fun [func] Function handle providing the perturbing acceleration:
+%                     acc_ECI = acc_pert_fun(t, s_cart, parameters)
+%                     with s_cart = [r; v] in ECI                           [km; km/s]
 %
-%   filterMode [char/string] Filtering mode selector:
-%                   "secular" -> ~1-orbit window, suppresses periodic terms
-%                   "events"  -> ~6-hour window, preserves fast changes
-%                   "mixed"   -> ~1-day window, robust compromise
+%   parameters  [1xN] Vector of model parameters (user-defined), e.g.:
+%                     [J2, mu, mass, Radius, t0_mjd2000]
 %
 % OUTPUT
-%   (none)     Generates one figure for each Keplerian element, showing:
-%             (i) processed (raw) signal, (ii) filtered signal, and
-%             (iii) linear secular trend estimated from the filtered signal.
+%   dkep        [6x1] Time derivatives of Keplerian elements:
+%                     [da/dt; de/dt; di/dt; dRaan/dt; domega/dt; df/dt]
 %
 % ASSUMPTIONS
-%   - The input Keplerian angles are expressed in radians.
-%   - Angles (i, Omega, omega) are unwrapped to avoid 2*pi discontinuities.
-%   - The true anomaly is made continuous by enforcing positive 0..2*pi
-%     increments (monotone evolution), which is suitable for visualisation
-%     over multiple revolutions.
-%   - The time step is approximately uniform (dt estimated by median(diff(t))).
+%   - Osculating Keplerian elements (instantaneous orbit).
+%   - Perturbations are treated as small accelerations added to the two-body dynamics.
+%   - The RSW frame is built from the instantaneous state (r,v).
+%   - Elliptic orbit (0 <= e < 1). Note: omega_dot and f_dot include 1/e terms.
+%   - inc ~= 0 to avoid singularity in dRaan/dt and omega_dot (1/sin(inc)).
 %
 % CONTRIBUTORS
 %   Luca Deli
@@ -55,85 +53,50 @@ function plotKepFiltered(t, kep, mu, filterMode)
 % VERSION
 %   2026-01-03
 
-    a0 = kep(1,1);
-    T  = 2*pi*sqrt(a0^3/mu);
-    tau = t / T;
-    N = length(tau);
+a     = kep(1);
+e     = kep(2);
+inc   = kep(3);
+Raan  = kep(4);
+omega = kep(5);
+f     = kep(6);
 
-    dt = median(diff(t)); % seconds between samples
+Primary.mu = parameters(2);
 
-    % -------------------- FILTERING CHOICE (justified) --------------------
-    % "secular": use 1 orbit window -> removes periodic oscillations, keeps drift (J2 / long-term evolution)
-    % "events" : use fixed short window (6h) -> reduces noise but preserves sharp jumps in TLE
-    % "mixed"  : use 1 day window -> smooth enough for trends, but still responsive to changes
-    %
-    % Why not same window always?
-    % - 1 orbit window is best for physical secular behavior but can hide sudden TLE jumps
-    % - 6h window is best for detecting abrupt changes but still noisy in angular elements
-    % - 1 day is a robust compromise for multi-year TLE datasets
+% Convert kep -> cartesian to build the local RSW frame
+[r, v] = Kep2Car_vec(kep, Primary.mu);
+s = [r; v];
 
-    switch lower(filterMode)
-        case "secular"
-            w = max(5, round(T/dt));         % ~1 orbit
-            filterLabel = sprintf("Filtered (%.1f orbit)", w*dt/T);
+% Perturbing acceleration in ECI
+acc_ECI = acc_pert_fun(t, s, parameters);
 
-        case "events"
-            w = max(5, round((6*3600)/dt));  % 6 hours
-            filterLabel = sprintf("Filtered (%.1f h)", w*dt/3600);
+% Orbital relations
+p     = a * (1 - e^2);
+rnorm = p / (1 + e*cos(f));
+hvec  = cross(r, v);
+h     = norm(hvec);
 
-        case "mixed"
-            w = max(5, round((24*3600)/dt)); % 1 day
-            filterLabel = sprintf("Filtered (%.1f d)", w*dt/86400);
+% RSW frame unit vectors
+r_rsw = r / rnorm;
+w_rsw = hvec / h;
+s_rsw = cross(w_rsw, r_rsw);
 
-        otherwise
-            error('filterMode must be "secular", "events" or "mixed"');
-    end
+% Projecting the accelerations into RSW
+a_r = dot(acc_ECI, r_rsw);
+a_s = dot(acc_ECI, s_rsw);
+a_w = dot(acc_ECI, w_rsw);
 
-    % -------------------- PREPARE ARRAYS FOR PLOT --------------------
-    kep_plot = zeros(N,6);
+% --- Gauss planetary equations (RSW form) ---
+a_dot   = (2*a^2/h) * ( e*sin(f)*a_r + (p/rnorm)*a_s );
+e_dot   = (1/h) * ( p*sin(f)*a_r + ((p + rnorm)*cos(f) + rnorm*e)*a_s );
+inc_dot = (rnorm*cos(f + omega)/h) * a_w;
 
-    kep_plot(:,1) = kep(:,1);
-    kep_plot(:,2) = kep(:,2);
+Raan_dot  = (rnorm*sin(f + omega)/(h*sin(inc))) * a_w;
+omega_dot = (1/(h*e)) * ( -p*cos(f)*a_r + (p + rnorm)*sin(f)*a_s ) ...
+          - (rnorm*sin(f + omega)*cos(inc)/(h*sin(inc))) * a_w;
 
-    for j = 3:5
-        kep_plot(:,j) = rad2deg(unwrap(kep(:,j)));   % i, Omega, omega
-    end
-    
-    ang = kep(:,6);                 % f in rad
-    d   = diff(ang);
-    d   = mod(d + 2*pi, 2*pi);      % force positive increments (0..2pi)
-    ang_cont = [ang(1); ang(1)+cumsum(d)];
-    kep_plot(:,6) = rad2deg(ang_cont);
+f_dot   = (h/rnorm^2) + (1/(h*e)) * ( p*cos(f)*a_r - (p + rnorm)*sin(f)*a_s );
 
-    kep_filt = zeros(N,6);
-    for j=1:6
-        kep_filt(:,j) = movmean(kep_plot(:,j), w, 'Endpoints','shrink');
-    end
-
-    names = {'a','e','i','Raan','omega','f'};
-    ylab  = {'a [km]','e [-]','i [deg]','Raan [deg]','omega [deg]','f [deg]'};
-
-    % -------------------- PLOTS --------------------
-    for j = 1:6
-
-        figure('Name', ['Keplerian evolution - ' names{j}]);
-        hold on;
-
-        plot(tau, kep_plot(:,j), 'LineWidth', 0.9);
-        plot(tau, kep_filt(:,j), 'LineWidth', 1.4);
-
-        % ---- secular trend line (linear fit) ----
-        p = polyfit(tau, kep_filt(:,j), 1);
-        trend = polyval(p, tau);
-        plot(tau, trend, 'LineWidth', 2.2);
-
-        grid on;
-        axis tight;
-        xlabel('time [T]');
-        ylabel(ylab{j});
-        title(['Keplerian element: ' names{j} '  ' filterMode '']);
-        legend('Not Filtered', filterLabel, 'Secular linear trend', 'Location','south');
-
-    end
+% --- Pack output ---
+dkep = [a_dot; e_dot; inc_dot; Raan_dot; omega_dot; f_dot];
 
 end

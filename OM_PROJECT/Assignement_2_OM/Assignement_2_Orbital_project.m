@@ -966,40 +966,40 @@ plotKepFiltered(COSMOS.tvec, kepCOSMOS, Primary.mu, "secular");
 
 A = importdata('NORAD25933.txt', ',');
 
-NORAD.evec      = A.data(:,1);
-NORAD.ivec      = deg2rad(A.data(:,3));
-NORAD.Raanvec   = deg2rad(A.data(:,4));
-NORAD.omegavec  = deg2rad(A.data(:,5));
-NORAD.theta0vec = deg2rad(A.data(:,9));
-NORAD.avec      = A.data(:,10);
+GPS_BIIR.evec      = A.data(:,1);
+GPS_BIIR.ivec      = deg2rad(A.data(:,3));
+GPS_BIIR.Raanvec   = deg2rad(A.data(:,4));
+GPS_BIIR.omegavec  = deg2rad(A.data(:,5));
+GPS_BIIR.theta0vec = deg2rad(A.data(:,9));
+GPS_BIIR.avec      = A.data(:,10);
 
-NORAD.e0      = A.data(1,1);
-NORAD.i0      = deg2rad(A.data(1,3));
-NORAD.Raan0   = deg2rad(A.data(1,4));
-NORAD.omega0  = deg2rad(A.data(1,5));
-NORAD.theta00 = deg2rad(A.data(1,9));
-NORAD.a0      = A.data(1,10);
+GPS_BIIR.e0      = A.data(1,1);
+GPS_BIIR.i0      = deg2rad(A.data(1,3));
+GPS_BIIR.Raan0   = deg2rad(A.data(1,4));
+GPS_BIIR.omega0  = deg2rad(A.data(1,5));
+GPS_BIIR.theta00 = deg2rad(A.data(1,9));
+GPS_BIIR.a0      = A.data(1,10);
 
-NORAD.kep0 = [NORAD.a0, NORAD.e0, NORAD.i0, NORAD.Raan0, NORAD.omega0, NORAD.theta00];
+GPS_BIIR.kep0 = [GPS_BIIR.a0, GPS_BIIR.e0, GPS_BIIR.i0, GPS_BIIR.Raan0, GPS_BIIR.omega0, GPS_BIIR.theta00];
 
-[NORAD.r0,NORAD.v0] = Kep2Car_vec(NORAD.kep0, Primary.mu);
+[GPS_BIIR.r0,GPS_BIIR.v0] = Kep2Car_vec(GPS_BIIR.kep0, Primary.mu);
 
 r=[];
 v=[];
 
 dt = 3600;
-NORAD.tvec = (0:length(NORAD.evec)-1) * dt;
+GPS_BIIR.tvec = (0:length(GPS_BIIR.evec)-1) * dt;
 
-for j=1:length(NORAD.evec)
-     [NORAD.r(j,:), NORAD.v(j,:)] = Kep2Car(NORAD.avec(j,1), NORAD.evec(j,1), NORAD.ivec(j,1), NORAD.Raanvec(j,1), NORAD.omegavec(j,1), NORAD.theta0vec(j,1), Primary.mu);
+for j=1:length(GPS_BIIR.evec)
+     [GPS_BIIR.r(j,:), GPS_BIIR.v(j,:)] = Kep2Car(GPS_BIIR.avec(j,1), GPS_BIIR.evec(j,1), GPS_BIIR.ivec(j,1), GPS_BIIR.Raanvec(j,1), GPS_BIIR.omegavec(j,1), GPS_BIIR.theta0vec(j,1), Primary.mu);
 end
 
-X = [NORAD.r(:,1), NORAD.r(:,1)];
-Y = [NORAD.r(:,2), NORAD.r(:,2)];
-Z = [NORAD.r(:,3), NORAD.r(:,3)];
+X = [GPS_BIIR.r(:,1), GPS_BIIR.r(:,1)];
+Y = [GPS_BIIR.r(:,2), GPS_BIIR.r(:,2)];
+Z = [GPS_BIIR.r(:,3), GPS_BIIR.r(:,3)];
 
-T = 2*pi *sqrt(NORAD.avec(1)^3/Primary.mu);
-C = [NORAD.tvec'/T NORAD.tvec'/T];
+T = 2*pi *sqrt(GPS_BIIR.avec(1)^3/Primary.mu);
+C = [GPS_BIIR.tvec'/T GPS_BIIR.tvec'/T];
 
 figure
 hold on
@@ -1016,8 +1016,8 @@ axis equal
 grid on
 view(3)
 
-kepNORAD = [NORAD.avec, NORAD.evec, NORAD.ivec, NORAD.Raanvec, NORAD.omegavec, NORAD.theta0vec];
-plotKepFiltered(NORAD.tvec, kepNORAD, Primary.mu, "secular");
+kepGPS_BIIR = [GPS_BIIR.avec, GPS_BIIR.evec, GPS_BIIR.ivec, GPS_BIIR.Raanvec, GPS_BIIR.omegavec, GPS_BIIR.theta0vec];
+plotKepFiltered(GPS_BIIR.tvec, kepGPS_BIIR, Primary.mu, "secular");
 
 
 % Sec

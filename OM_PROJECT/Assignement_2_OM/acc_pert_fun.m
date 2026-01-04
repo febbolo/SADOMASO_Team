@@ -52,7 +52,7 @@ function acc_pert_vec = acc_pert_fun(t, s, parameters)
 
 Primary.J2     = parameters(1);
 Primary.mu     = parameters(2);
-Primary.mass   = parameters(3); %#ok<NASGU> % not used in this function
+Primary.mass   = parameters(3);
 Primary.Radius = parameters(4);
 t0_mjd2000     = parameters(5);
 

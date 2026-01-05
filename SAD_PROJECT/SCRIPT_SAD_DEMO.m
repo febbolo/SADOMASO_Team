@@ -352,10 +352,10 @@ Sun_sensor.weight = 1/Sun_sensor.accuracy;
 
 Magmeter.alpha = Magmeter.weight / (Magmeter.weight + Sun_sensor.weight); %[-]
 Sun_sensor.alpha = Sun_sensor.weight / (Magmeter.weight + Sun_sensor.weight); %[-]
-Dt = str2double(get_param('SIM_SAD_DEMO','FixedStep'));
 
-q.maxsensor = min(Sun_sensor.Ts, Magmeter.Ts);
-q.Ts = max(q.maxsensor, Dt);
+
+q.maxsensor = max(Sun_sensor.Ts, Magmeter.Ts);
+q.Ts = max(q.maxsensor);
 
 % --------------- FILTER ON GYROSCOPE --------------------------
 

@@ -58,7 +58,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0; 0; 0];  %[rad/s]
+w0 = [0.2; 0.4; 0.3];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
 kep = [a,e,incl,raan,w,theta];
@@ -388,9 +388,9 @@ Filter.POINTING.omega_t = 1; %[rad/s]
 A = [0, 0, 0, 0, 0, 0;...
      0, 0, 0, 0, 0, 0;...
      0, 0, 0, 0, 0, 0;...
+     0, 0, 1, 0, 0, 0;...
      1, 0, 0, 0, 0, 0;...
-     0, 1, 0, 0, 0, 0;...
-     0, 0, 1, 0, 0, 0];
+     0, 1, 0, 0, 0, 0];
  % From state space model
 B = [1/J_depl(1), 0, 0;...
      0, 1/J_depl(5), 0;...
@@ -535,15 +535,15 @@ x = simout.x;
 u = simout.u;
 % Actuators real torque (continuous)
 M_act = simout.M_act;
-% Quaternion's attitude error (discrete)
-q_err = simout.q_err;
+% Pointing error (discrete)
+sb = simout.sb;
 
 %% ---------- PLOTS -------------
 
 % Pre-allocate Q, error and norm_error
-Q = zeros(3, 3, length(time));
-error = zeros(3, 3, length(time));
-norm_error = zeros(1, length(time));
+Q = zeros(3, 3, length(discrete_time));
+error = zeros(3, 3, length(discrete_time));
+norm_error = zeros(1, length(discrete_time));
 
 % Plot the attitude error matrix components over time
 figure('Name','Attitude Error Matrix Components');
@@ -566,7 +566,7 @@ for i = 1:length(discrete_time)
 end
 % Plot orthonormality error of A_e
 figure('Name','Orthonormality error of A_e')
-plot(time, norm_error)
+plot(discrete_time, norm_error)
 
 
 % Plot the real and estimated angular velocity components over time
@@ -663,11 +663,17 @@ ylabel('Torque (N·m)');
 grid on;
 
 % Plot poiting error over time
-q4_err = q_err(:,4);
-theta_deg = rad2deg(2*acos(q4_err)) - 180;
+
+xb = [1;0;0];
+
+theta_point = zeros(length(discrete_time));
+for k = 1:length(discrete_time)
+    theta_point(k) = acos(dot(xb',sb(k,:)));
+end
+theta_point_deg = rad2deg(theta_point);
 
 figure('Name','Pointing error over time');
-plot(discrete_time, theta_deg, 'LineWidth', 1);
+plot(discrete_time,theta_point_deg , 'LineWidth', 1);
 title('Pointing Error vs Time');
 xlabel('Time (s)');
 ylabel('\Delta\theta_{point} [deg]');

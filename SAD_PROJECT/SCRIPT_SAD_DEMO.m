@@ -58,7 +58,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.2; 0.4; 0.3];  %[rad/s]
+w0 = [0; 0; 0];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
 kep = [a,e,incl,raan,w,theta];

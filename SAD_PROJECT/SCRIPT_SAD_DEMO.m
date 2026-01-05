@@ -547,7 +547,7 @@ error = zeros(3, 3, length(time));
 norm_error = zeros(1, length(time));
 
 % Plot the attitude error matrix components over time
-figure('Name','Attitude Error Matrix Components over Time');
+figure('Name','Attitude Error Matrix Components');
 for i = 1:3
     for j = 1:3
         subplot(3, 3, (i-1)*3 + j);
@@ -571,7 +571,7 @@ plot(time, norm_error)
 
 
 % Plot the real and estimated angular velocity components over time
-figure('Name','Real and Estimated Angular Velocity Components over Time');
+figure('Name','Real and Estimated Angular Velocity Components');
 subplot(2, 1, 1);
 hold on;
 plot(time, w_B(1, :), 'LineWidth', 1, 'DisplayName', 'Real w_x');
@@ -597,7 +597,7 @@ hold off;
 
 
 % Plot the state vector components over time
-figure('Name','State Vector Components over Time');
+figure('Name','State Vector Components');
 for i = 1:3
     subplot(2, 3, i);
     plot(discrete_time, x(i, :), 'LineWidth', 1);
@@ -616,7 +616,7 @@ for i = 4:6
 end
 
 % Plot the ideal control torque components over time
-figure('Name','Control Ideal Torque Components over Time');
+figure('Name','Control Ideal Torque Components');
 % u_x
 subplot(3,1,1);
 plot(discrete_time, u(:,1), 'LineWidth', 1);
@@ -640,7 +640,7 @@ ylabel('Torque (N·m)');
 grid on;
 
 % Plot actuator torque components over time
-figure('Name','Actuator Torque Components over Time');
+figure('Name','Actuator Torque Components');
 % M_x
 subplot(3,1,1);
 plot(time, squeeze(M_act(1,:)), 'LineWidth', 1);
@@ -677,7 +677,7 @@ grid on;
 
 %% ---------- MONTE CARLO ANALYSIS ----------
 
-N_MC = 2;
+N_MC = 50;
 
 % Preallocate results
 % w_MC(sim, axis, time)
@@ -788,6 +788,158 @@ groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]
 play(sc,PlaybackSpeedMultiplier=500)
 
 %Conversion a m -> km
-a = a/1000;         %[km] 
+a = a/1000;  %[km] 
+
+%% =============================================================
+%  SATELLITE SCENARIO (solo caso nominale, animazione step-by-step)
+%% =============================================================
+
+% ---- Tempo Simulink -> scenario
+tSim = simout.tout(:);                 % [s]
+t0   = startTime;                      % datetime
+t1   = t0 + seconds(tSim(end));        % datetime
+sampleTime = 1;                        % [s] (animazione fluida)
+
+% Manual stepping: AutoSimulate=false + advance (doc MathWorks)
+scAOCS = satelliteScenario(t0, t1, sampleTime, "AutoSimulate", false);  % :contentReference[oaicite:0]{index=0}
+vAOCS  = satelliteScenarioViewer(scAOCS, "Dimension","3D", "ShowDetails",false);
+
+% ---- Satellite in orbita (a in m)
+semiMajorAxis_m = a*1e3;               % se a è in km
+satAOCS = satellite(scAOCS, semiMajorAxis_m, e, incl, raan, w, theta, "Name","AOCS-SAT");
+
+% Visual
+satAOCS.Visual3DModel = "SmallSat.glb";
+coordinateAxes(satAOCS, Scale=4);
+
+orbAOCS = orbit(satAOCS, "LeadTime",900, "TrailTime",900, "LineWidth",2);
+
+% Camera follow + zoom (doc)
+camtarget(vAOCS, satAOCS);             % :contentReference[oaicite:1]{index=1}
+campitch(vAOCS, -20);                  % :contentReference[oaicite:2]{index=2}
+camheight(vAOCS, 1.2e7);               % :contentReference[oaicite:3]{index=3}
+
+% ---- Selezione SOLO caso nominale (no MonteCarlo)
+mcIdx = 1;
+
+% A_B_N_ortho -> voglio 3x3xN nominale
+A = A_B_N_ortho;
+if ndims(A) == 4
+    A = squeeze(A(:,:,:,mcIdx));
+end
+if ndims(A) ~= 3
+    error("A_B_N_ortho non in formato 3x3xN (o 3x3xN x Nmc). Size=%s", mat2str(size(A)));
+end
+N = size(A,3);
+
+% w_B -> voglio Nx3 nominale
+wB = w_B;
+if ndims(wB) == 3
+    wB = wB(:,:,mcIdx);
+end
+if ndims(wB) ~= 2
+    error("w_B non in formato Nx3 (o 3xN) (o con Nmc). Size=%s", mat2str(size(w_B)));
+end
+
+[rw,cw] = size(wB);
+if rw == 3 && cw ~= 3
+    wB = wB.';  % 3xN -> Nx3
+elseif cw == 3
+    % già Nx3
+else
+    error("w_B size non riconosciuta: %s", mat2str([rw cw]));
+end
+wNorm = vecnorm(wB,2,2);
+
+% ---- Attitude profile -> quaternioni -> timetable per pointAt
+% Costruisco quaternioni scalar-first [w x y z] per ogni istante
+qMat = zeros(N,4);
+for k = 1:N
+    qk = quaternion(A(:,:,k), "rotmat", "frame");
+    qMat(k,:) = compact(qk);
+end
+
+% Tempo associato ai campioni di assetto: preferisco tout se coincide
+if N == numel(tSim)
+    tAtt = tSim(:);
+else
+    tAtt = linspace(0, tSim(end), N).';
+end
+
+% Sicurezza dimensioni coerenti
+M = min(numel(tAtt), size(qMat,1));
+tAtt = tAtt(1:M);
+qMat = qMat(1:M,:);
+
+% Tolgo tempi duplicati PRIMA del timetable
+[tAttU, ia] = uniquetol(tAtt, 1e-4);
+qMatU = qMat(ia,:);
+
+% Timetable (name-value con char, compatibile)
+attTT = timetable(seconds(tAttU), qMatU, 'VariableNames', {'qInertialToBody'});
+
+% Carico il profilo di assetto nello scenario (doc pointAt)
+pointAt(satAOCS, attTT, ...
+    "CoordinateFrame","inertial", ...
+    "Format","quaternion", ...
+    "ExtrapolationMethod","nadir");    % :contentReference[oaicite:4]{index=4}
+
+% ---- Animazione step-by-step con advance + fasi colorate
+% Fallback soglie se non presenti nello script
+if ~exist("w_enter","var");   w_enter   = 5e-2;  end
+if ~exist("w_enter_2","var"); w_enter_2 = 5e-3;  end
+
+restart(scAOCS);                               % :contentReference[oaicite:5]{index=5}
+prevPhase = "";
+playbackSpeed = 80;
+
+while advance(scAOCS)                          % :contentReference[oaicite:6]{index=6}
+    tt = seconds(scAOCS.SimulationTime - scAOCS.StartTime);
+
+    % indice Simulink più vicino
+    [~,k] = min(abs(tSim - tt));
+
+    % Fasi da norma velocità angolare (nominale)
+    if wNorm(k) > w_enter
+        phase = "DETUMBLING";
+    elseif wNorm(k) > w_enter_2
+        phase = "SLEW MANOEUVRE";
+    else
+        phase = "POINTING";
+    end
+
+    % Cambia colori solo quando cambia fase
+    if phase ~= prevPhase
+        switch phase
+            case "DETUMBLING"
+                satAOCS.MarkerColor = "red";
+                orbAOCS.LineColor   = "red";
+            case "SLEW MANOEUVRE"
+                satAOCS.MarkerColor = "#FF8800";
+                orbAOCS.LineColor   = "yellow";
+            case "POINTING"
+                satAOCS.MarkerColor = "green";
+                orbAOCS.LineColor   = "green";
+        end
+        prevPhase = phase;
+    end
+
+    % Titolo: fase + norma |w|
+    vAOCS.Name = "AOCS | " + phase + ...
+        " | t=" + sprintf("%.1f", tt) + " s" + ...
+        " | |w|=" + sprintf("%.3g", wNorm(k)) + " rad/s";
+
+    drawnow limitrate
+    pause(sampleTime/playbackSpeed)
+end
+
+
+
+
+
+
+
+
+
 
 

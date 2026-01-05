@@ -58,7 +58,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0; 0; 0];  %[rad/s]
+w0 = [0.2; 0.4; 0.3];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
 kep = [a,e,incl,raan,w,theta];
@@ -535,8 +535,19 @@ x = simout.x;
 u = simout.u;
 % Actuators real torque (continuous)
 M_act = simout.M_act;
+<<<<<<< HEAD
 % Pointing error (discrete)
 sb = simout.sb;
+=======
+% Quaternion's attitude error (discrete)
+q_err = simout.q_err;
+% Extract Radiation torque (SRP + Albedo + Earth IR)
+RAD_T = simout.RAD_T;
+% Extract Magnetic torque
+MAG_T = simout.T_M;
+% Extract Gravity-gradient torque
+GG_T  = simout.T_GG;
+>>>>>>> f0aebdbd804b1e3bd20b1a6ce2c465d1ade11c41
 
 %% ---------- PLOTS -------------
 
@@ -679,129 +690,226 @@ xlabel('Time (s)');
 ylabel('\Delta\theta_{point} [deg]');
 grid on;
 
+% Plot disturbances
+% --- Normalize RAD_T (row per step) to 3xN ---
+RAD_T = squeeze(RAD_T);
+Nt = numel(time);
 
-% %% ---------- MONTE CARLO ANALYSIS ----------
-% 
-% N_MC = 50;
-% 
-% % Preallocate results
-% % w_MC(sim, axis, time)
-% w_MC = cell(N_MC,1);
-% time_MC = cell(N_MC,1);
-% 
-% % Save nominal values
-% J_nom   = J_depl;
-% w0_nom  = w0;
-% a_nom   = a;
-% e_nom   = e;
-% incl_nom = incl;
-% raan_nom = raan;
-% SRP_nom = SRP;
-% 
-% for k = 1:N_MC
-% 
-%     fprintf('Monte Carlo run %d / %d \n', k, N_MC);
-% 
-%     % Random seed
-%     rng(k);
-%     base_seed_MC = base_seed;
-%     base_seed = base_seed_MC + k; 
-% 
-%     % INERTIA (±10% sui principali, ±5% cross)
-%     J_depl = J_nom .* diag(1 + 0.10*randn(3,1));
-% 
-%     % ANGULAR VELOCITIES ±30%
-%     w0 = w0_nom .* (1 + 0.30*randn(3,1));
-% 
-%     % ORBITS UNCERTAINTIES
-%     a     = a_nom    * (1 + 0.005*randn);     % ±0.5%
-%     e     = max(0, e_nom + 0.001*randn);      % small variation
-%     incl  = incl_nom + 0.1*randn;             % ±0.1 deg
-%     raan  = raan_nom + 0.2*randn;             % ±0.2 deg
-% 
-%     kep = [a,e,incl,raan,w,theta];
-% 
-%     % SRP DISTURBANCES UNCERTAINTY
-%     fields = fieldnames(SRP_nom);
-%     for ii = 1:length(fields)
-%         SRP.(fields{ii}).A = SRP_nom.(fields{ii}).A * (1 + 0.05*randn);
-%         SRP.(fields{ii}).r_F = SRP_nom.(fields{ii}).r_F .* (1 + 0.10*randn(1,3));
-%     end
-% 
-%     % Simulation
-%     simout = sim('SIM_SAD_DEMO','FastRestart','off');
-% 
-%     % Saving results
-%     w_MC{k} = simout.w_B;
-%     time_MC{k} = simout.tout;    
-% end
-% 
-% % Creating matrix for angular velocities
-% Nt = length(time_MC{1});
-% w_MC_mat = zeros(N_MC,3,Nt);
-% for k = 1:N_MC
-%     w_MC_mat(k,:,:) = rad2deg(w_MC{k});
-% end
-% 
-% %% --------- PLOT : MONTE CARLO ANALYSIS ---------- 
-% 
-% figure('Name','Monte Carlo Angular Velocities');
-% hold on;
-% N_MC = size(w_MC_mat,1);
-% Nt   = size(w_MC_mat,3);
-% t = time_MC{1};
-% for k = 1:N_MC
-%     plot(t, squeeze(w_MC_mat(k,1,:)),'LineWidth',1); % w_x
-%     plot(t, squeeze(w_MC_mat(k,2,:)),'LineWidth',1); % w_y
-%     plot(t, squeeze(w_MC_mat(k,3,:)),'LineWidth',1); % w_z
-% end
-% xlabel('Time [s]');
-% ylabel('Angular velocity [deg/s]');
-% title('Monte Carlo Angular Velocities (w_x, w_y, w_z)');
-% grid on;
-% legend({'\omega_x','\omega_y','\omega_z'});
-% hold off;
-% 
-% 
-% % Restoring nominal values
-% J_depl = J_nom;
-% w0     = w0_nom;
-% a      = a_nom;
-% e      = e_nom;
-% incl   = incl_nom;
-% raan   = raan_nom;
-% SRP    = SRP_nom;
-% 
-% 
-% 
-% %% ----------- SATELLITE SCENARIO ----------------
-% 
-% %Conversion a km -> m
-% a = a*1000;         %[m]
-% 
-% %Satellite Scenario 
-% stopTime = startTime + seconds(2*T);
-% sampleTime = 60;
-% sc = satelliteScenario(startTime,stopTime,sampleTime);
-% viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
-% sat = satellite(sc,a,e,incl,raan,w,theta);
-% show(sat)
-% sat.Visual3DModel = "SmallSat.glb";
-% coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
-% camtarget(viewer, sat);
-% groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
-% play(sc,PlaybackSpeedMultiplier=500)
-% 
-% %Conversion a m -> km
-% a = a/1000;  %[km] 
+if isequal(size(RAD_T), [1 3]) || isequal(size(RAD_T), [3 1])
+    % Only a single 3-vector available: replicate across time
+    v = reshape(RAD_T, 1, 3);          % 1x3
+    RAD = repmat(v, Nt, 1).';          % -> 3xNt
+elseif size(RAD_T,2) == 3              % Nx3
+    RAD = RAD_T.';                     % -> 3xN
+elseif size(RAD_T,1) == 3              % 3xN already
+    RAD = RAD_T;
+else
+    error('RAD_T has unexpected size %s', mat2str(size(RAD_T)));
+end
+
+% --- Normalize MAG_T (column per step) to 3xN ---
+MAG_T = squeeze(MAG_T);
+if isequal(size(MAG_T), [3 1]) || isequal(size(MAG_T), [1 3])
+    % Single 3-vector: replicate
+    v = reshape(MAG_T, 3, 1);          % 3x1
+    MAG = repmat(v, 1, Nt);            % -> 3xNt
+elseif size(MAG_T,1) == 3              % 3xN
+    MAG = MAG_T;
+elseif size(MAG_T,2) == 3              % Nx3
+    MAG = MAG_T.';                     % -> 3xN
+else
+    error('MAG_T has unexpected size %s', mat2str(size(MAG_T)));
+end
+
+% --- Normalize GG_T (row per step) to 3xN ---
+GG_T = squeeze(GG_T);
+if isequal(size(GG_T), [1 3]) || isequal(size(GG_T), [3 1])
+    v = reshape(GG_T, 1, 3);           % 1x3
+    GG = repmat(v, Nt, 1).';           % -> 3xNt
+elseif size(GG_T,2) == 3               % Nx3
+    GG = GG_T.';                       % -> 3xN
+elseif size(GG_T,1) == 3               % 3xN
+    GG = GG_T;
+else
+    error('GG_T has unexpected size %s', mat2str(size(GG_T)));
+end
+
+% --- Trim or pad to match time length exactly ---
+RAD = RAD(:, 1:min(size(RAD,2), Nt));
+MAG = MAG(:, 1:min(size(MAG,2), Nt));
+GG  = GG(:,  1:min(size(GG, 2), Nt));
+Nmin = min([size(RAD,2), size(MAG,2), size(GG,2), Nt]);
+
+RAD = RAD(:,1:Nmin);
+MAG = MAG(:,1:Nmin);
+GG  = GG(:, 1:Nmin);
+t_plot = time(1:Nmin);
+
+% ----- Magnitudes ("modules") -----
+RAD_mag = vecnorm(RAD,2,1);
+MAG_mag = vecnorm(MAG,2,1);
+GG_mag  = vecnorm(GG, 2,1);
+
+% -------------------- Plot components: Radiation -------------------------
+figure('Name','Radiation disturbance torque components (BODY frame)','Color','w');
+subplot(3,1,1); plot(t_plot, RAD(1,:), 'LineWidth', 1); grid on;
+title('Radiation Torque T_{Bx}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,2); plot(t_plot, RAD(2,:), 'LineWidth', 1); grid on;
+title('Radiation Torque T_{By}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,3); plot(t_plot, RAD(3,:), 'LineWidth', 1); grid on;
+title('Radiation Torque T_{Bz}'); xlabel('Time (s)'); ylabel('N·m');
+
+% -------------------- Plot components: Magnetic --------------------------
+figure('Name','Magnetic disturbance torque components (BODY frame)','Color','w');
+subplot(3,1,1); plot(t_plot, MAG(1,:), 'LineWidth', 1); grid on;
+title('Magnetic Torque T_{Bx}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,2); plot(t_plot, MAG(2,:), 'LineWidth', 1); grid on;
+title('Magnetic Torque T_{By}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,3); plot(t_plot, MAG(3,:), 'LineWidth', 1); grid on;
+title('Magnetic Torque T_{Bz}'); xlabel('Time (s)'); ylabel('N·m');
+
+% -------------------- Plot components: Gravity Gradient ------------------
+figure('Name','Gravity-gradient disturbance torque components (BODY frame)','Color','w');
+subplot(3,1,1); plot(t_plot, GG(1,:), 'LineWidth', 1); grid on;
+title('Gravity-Gradient Torque T_{Bx}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,2); plot(t_plot, GG(2,:), 'LineWidth', 1); grid on;
+title('Gravity-Gradient Torque T_{By}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,3); plot(t_plot, GG(3,:), 'LineWidth', 1); grid on;
+title('Gravity-Gradient Torque T_{Bz}'); xlabel('Time (s)'); ylabel('N·m');
+
+% -------------------- Magnitudes: individual ----------------------------
+figure('Name','Radiation torque magnitude','Color','w');
+plot(t_plot, RAD_mag, 'LineWidth', 1.5); grid on;
+title('||T_{rad}||'); xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
+
+figure('Name','Magnetic torque magnitude','Color','w');
+plot(t_plot, MAG_mag, 'LineWidth', 1.5); grid on;
+title('||T_{mag}||'); xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
+
+figure('Name','Gravity-gradient torque magnitude','Color','w');
+plot(t_plot, GG_mag, 'LineWidth', 1.5); grid on;
+title('||T_{GG}||'); xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
+
+% -------------------- Magnitudes: comparison ----------------------------
+figure('Name','Disturbance torque magnitudes (comparison)','Color','w');
+plot(t_plot, RAD_mag, 'LineWidth', 1.5, 'DisplayName','Radiation'); hold on;
+plot(t_plot, MAG_mag, 'LineWidth', 1.5, 'DisplayName','Magnetic');
+plot(t_plot, GG_mag,  'LineWidth', 1.5, 'DisplayName','Gravity Gradient');
+grid on; legend('Location','best'); hold off;
+title('Magnitudes of disturbance torques');
+xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
+
+%% ---------- MONTE CARLO ANALYSIS ----------
+
+N_MC = 1;
+
+% Preallocate results
+% w_MC(sim, axis, time)
+w_MC = cell(N_MC,1);
+time_MC = cell(N_MC,1);
+
+% Save nominal values
+J_nom   = J_depl;
+w0_nom  = w0;
+a_nom   = a;
+e_nom   = e;
+incl_nom = incl;
+raan_nom = raan;
+SRP_nom = SRP;
+
+for k = 1:N_MC
+
+    fprintf('Monte Carlo run %d / %d \n', k, N_MC);
+
+    % Random seed
+    rng(k);
+    base_seed_MC = base_seed;
+    base_seed = base_seed_MC + k; 
+
+    % INERTIA (±10% sui principali, ±5% cross)
+    J_depl = J_nom .* diag(1 + 0.10*randn(3,1));
+
+    % ANGULAR VELOCITIES ±30%
+    w0 = w0_nom .* (1 + 0.30*randn(3,1));
+
+    % ORBITS UNCERTAINTIES
+    a     = a_nom    * (1 + 0.005*randn);     % ±0.5%
+    e     = max(0, e_nom + 0.001*randn);      % small variation
+    incl  = incl_nom + 0.1*randn;             % ±0.1 deg
+    raan  = raan_nom + 0.2*randn;             % ±0.2 deg
+
+    kep = [a,e,incl,raan,w,theta];
+
+    % SRP DISTURBANCES UNCERTAINTY
+    fields = fieldnames(SRP_nom);
+    for ii = 1:length(fields)
+        SRP.(fields{ii}).A = SRP_nom.(fields{ii}).A * (1 + 0.05*randn);
+        SRP.(fields{ii}).r_F = SRP_nom.(fields{ii}).r_F .* (1 + 0.10*randn(1,3));
+    end
+
+    % Simulation
+    simout = sim('SIM_SAD_DEMO','FastRestart','off');
+
+    % Saving results
+    w_MC{k} = simout.w_B;
+    time_MC{k} = simout.tout;    
+end
+
+% Creating matrix for angular velocities
+Nt = length(time_MC{1});
+w_MC_mat = zeros(N_MC,3,Nt);
+for k = 1:N_MC
+    w_MC_mat(k,:,:) = rad2deg(w_MC{k});
+end
+
+%% --------- PLOT : MONTE CARLO ANALYSIS ---------- 
+
+figure('Name','Monte Carlo Angular Velocities');
+hold on;
+N_MC = size(w_MC_mat,1);
+Nt   = size(w_MC_mat,3);
+t = time_MC{1};
+for k = 1:N_MC
+    plot(t, squeeze(w_MC_mat(k,1,:)),'LineWidth',1); % w_x
+    plot(t, squeeze(w_MC_mat(k,2,:)),'LineWidth',1); % w_y
+    plot(t, squeeze(w_MC_mat(k,3,:)),'LineWidth',1); % w_z
+end
+xlabel('Time [s]');
+ylabel('Angular velocity [deg/s]');
+title('Monte Carlo Angular Velocities (w_x, w_y, w_z)');
+grid on;
+legend({'\omega_x','\omega_y','\omega_z'});
+hold off;
+
+
+% Restoring nominal values
+J_depl = J_nom;
+w0     = w0_nom;
+a      = a_nom;
+e      = e_nom;
+incl   = incl_nom;
+raan   = raan_nom;
+SRP    = SRP_nom;
 
 
 
+%% ----------- SATELLITE SCENARIO ----------------
 
+%Conversion a km -> m
+a = a*1000;         %[m]
 
+%Satellite Scenario 
+stopTime = startTime + seconds(2*T);
+sampleTime = 60;
+sc = satelliteScenario(startTime,stopTime,sampleTime);
+viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
+sat = satellite(sc,a,e,incl,raan,w,theta);
+show(sat)
+sat.Visual3DModel = "SmallSat.glb";
+coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
+camtarget(viewer, sat);
+groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
+play(sc,PlaybackSpeedMultiplier=500)
 
-
-
-
-
-
+%Conversion a m -> km
+a = a/1000;  %[km] 

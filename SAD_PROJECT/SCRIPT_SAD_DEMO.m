@@ -537,6 +537,12 @@ u = simout.u;
 M_act = simout.M_act;
 % Quaternion's attitude error (discrete)
 q_err = simout.q_err;
+% Extract Radiation torque (SRP + Albedo + Earth IR)
+RAD_T = simout.RAD_T;
+% Extract Magnetic torque
+MAG_T = simout.T_M;
+% Extract Gravity-gradient torque
+GG_T  = simout.T_GG;
 
 %% ---------- PLOTS -------------
 
@@ -673,10 +679,118 @@ xlabel('Time (s)');
 ylabel('\Delta\theta_{point} [deg]');
 grid on;
 
+% Plot disturbances
+% --- Normalize RAD_T (row per step) to 3xN ---
+RAD_T = squeeze(RAD_T);
+Nt = numel(time);
+
+if isequal(size(RAD_T), [1 3]) || isequal(size(RAD_T), [3 1])
+    % Only a single 3-vector available: replicate across time
+    v = reshape(RAD_T, 1, 3);          % 1x3
+    RAD = repmat(v, Nt, 1).';          % -> 3xNt
+elseif size(RAD_T,2) == 3              % Nx3
+    RAD = RAD_T.';                     % -> 3xN
+elseif size(RAD_T,1) == 3              % 3xN already
+    RAD = RAD_T;
+else
+    error('RAD_T has unexpected size %s', mat2str(size(RAD_T)));
+end
+
+% --- Normalize MAG_T (column per step) to 3xN ---
+MAG_T = squeeze(MAG_T);
+if isequal(size(MAG_T), [3 1]) || isequal(size(MAG_T), [1 3])
+    % Single 3-vector: replicate
+    v = reshape(MAG_T, 3, 1);          % 3x1
+    MAG = repmat(v, 1, Nt);            % -> 3xNt
+elseif size(MAG_T,1) == 3              % 3xN
+    MAG = MAG_T;
+elseif size(MAG_T,2) == 3              % Nx3
+    MAG = MAG_T.';                     % -> 3xN
+else
+    error('MAG_T has unexpected size %s', mat2str(size(MAG_T)));
+end
+
+% --- Normalize GG_T (row per step) to 3xN ---
+GG_T = squeeze(GG_T);
+if isequal(size(GG_T), [1 3]) || isequal(size(GG_T), [3 1])
+    v = reshape(GG_T, 1, 3);           % 1x3
+    GG = repmat(v, Nt, 1).';           % -> 3xNt
+elseif size(GG_T,2) == 3               % Nx3
+    GG = GG_T.';                       % -> 3xN
+elseif size(GG_T,1) == 3               % 3xN
+    GG = GG_T;
+else
+    error('GG_T has unexpected size %s', mat2str(size(GG_T)));
+end
+
+% --- Trim or pad to match time length exactly ---
+RAD = RAD(:, 1:min(size(RAD,2), Nt));
+MAG = MAG(:, 1:min(size(MAG,2), Nt));
+GG  = GG(:,  1:min(size(GG, 2), Nt));
+Nmin = min([size(RAD,2), size(MAG,2), size(GG,2), Nt]);
+
+RAD = RAD(:,1:Nmin);
+MAG = MAG(:,1:Nmin);
+GG  = GG(:, 1:Nmin);
+t_plot = time(1:Nmin);
+
+% ----- Magnitudes ("modules") -----
+RAD_mag = vecnorm(RAD,2,1);
+MAG_mag = vecnorm(MAG,2,1);
+GG_mag  = vecnorm(GG, 2,1);
+
+% -------------------- Plot components: Radiation -------------------------
+figure('Name','Radiation disturbance torque components (BODY frame)','Color','w');
+subplot(3,1,1); plot(t_plot, RAD(1,:), 'LineWidth', 1); grid on;
+title('Radiation Torque T_{Bx}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,2); plot(t_plot, RAD(2,:), 'LineWidth', 1); grid on;
+title('Radiation Torque T_{By}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,3); plot(t_plot, RAD(3,:), 'LineWidth', 1); grid on;
+title('Radiation Torque T_{Bz}'); xlabel('Time (s)'); ylabel('N·m');
+
+% -------------------- Plot components: Magnetic --------------------------
+figure('Name','Magnetic disturbance torque components (BODY frame)','Color','w');
+subplot(3,1,1); plot(t_plot, MAG(1,:), 'LineWidth', 1); grid on;
+title('Magnetic Torque T_{Bx}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,2); plot(t_plot, MAG(2,:), 'LineWidth', 1); grid on;
+title('Magnetic Torque T_{By}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,3); plot(t_plot, MAG(3,:), 'LineWidth', 1); grid on;
+title('Magnetic Torque T_{Bz}'); xlabel('Time (s)'); ylabel('N·m');
+
+% -------------------- Plot components: Gravity Gradient ------------------
+figure('Name','Gravity-gradient disturbance torque components (BODY frame)','Color','w');
+subplot(3,1,1); plot(t_plot, GG(1,:), 'LineWidth', 1); grid on;
+title('Gravity-Gradient Torque T_{Bx}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,2); plot(t_plot, GG(2,:), 'LineWidth', 1); grid on;
+title('Gravity-Gradient Torque T_{By}'); xlabel('Time (s)'); ylabel('N·m');
+subplot(3,1,3); plot(t_plot, GG(3,:), 'LineWidth', 1); grid on;
+title('Gravity-Gradient Torque T_{Bz}'); xlabel('Time (s)'); ylabel('N·m');
+
+% -------------------- Magnitudes: individual ----------------------------
+figure('Name','Radiation torque magnitude','Color','w');
+plot(t_plot, RAD_mag, 'LineWidth', 1.5); grid on;
+title('||T_{rad}||'); xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
+
+figure('Name','Magnetic torque magnitude','Color','w');
+plot(t_plot, MAG_mag, 'LineWidth', 1.5); grid on;
+title('||T_{mag}||'); xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
+
+figure('Name','Gravity-gradient torque magnitude','Color','w');
+plot(t_plot, GG_mag, 'LineWidth', 1.5); grid on;
+title('||T_{GG}||'); xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
+
+% -------------------- Magnitudes: comparison ----------------------------
+figure('Name','Disturbance torque magnitudes (comparison)','Color','w');
+plot(t_plot, RAD_mag, 'LineWidth', 1.5, 'DisplayName','Radiation'); hold on;
+plot(t_plot, MAG_mag, 'LineWidth', 1.5, 'DisplayName','Magnetic');
+plot(t_plot, GG_mag,  'LineWidth', 1.5, 'DisplayName','Gravity Gradient');
+grid on; legend('Location','best'); hold off;
+title('Magnitudes of disturbance torques');
+xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
 
 %% ---------- MONTE CARLO ANALYSIS ----------
 
-N_MC = 50;
+N_MC = 1;
 
 % Preallocate results
 % w_MC(sim, axis, time)

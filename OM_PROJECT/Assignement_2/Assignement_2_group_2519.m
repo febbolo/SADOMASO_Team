@@ -260,7 +260,7 @@ for icase = case_list
 
     else
         plot3(r_nom(:,1), r_nom(:,2), r_nom(:,3),'LineWidth', 3, 'Color', 'g', 'DisplayName', 'Nominal orbit')
-        % plot3(r_rgt(:,1), r_rgt(:,2), r_rgt(:,3),'LineWidth', 5, 'Color', 'r', 'DisplayName', 'RGT orbit')
+        plot3(r_rgt(:,1), r_rgt(:,2), r_rgt(:,3),'LineWidth', 5, 'Color', 'r', 'DisplayName', 'RGT orbit')
     end
 
     xlabel('x [km]')
@@ -1023,9 +1023,6 @@ plotKepFiltered(GPS_BIIR.tvec, kepGPS_BIIR, Primary.mu, "secular");
 % Sec
 % NORAD 25933
 % (GPS BIIR-2, ormai spesso usato come caso studio)
-
-
-
 
 % ______________ SATELLITE SCENARIO FOR PLOT TO IMPLEMENT ______________
 

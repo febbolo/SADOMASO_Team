@@ -121,7 +121,7 @@ if license('test','Aerospace_Toolbox')
     show(sat2)
     groundTrack(sat1,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0],"TrailTime",5*T_rgt);
     groundTrack(sat2,"LeadTime",3600,"LeadLineColor",[1 0 0],"TrailLineColor",[1 0 0],"TrailTime",5*T_rgt);
-    play(sc,PlaybackSpeedMultiplier=2000)
+    play(sc,PlaybackSpeedMultiplier=10000)
     
     a_nom = a_nom/1000; %[km]
     a_rgt = a_rgt/1000; %[km]

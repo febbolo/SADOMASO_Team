@@ -58,7 +58,7 @@ n = sqrt( (mu/ (a)^3));   %[rad/s]
 T = 2*pi/n;     %[s]
 
 % Initial Conditions
-w0 = [0.2; 0.4; 0.3];  %[rad/s]
+w0 = [0.3; 0.4; 0.2];  %[rad/s]
 
 % Creating initial condition Keplerian elements vector
 kep = [a,e,incl,raan,w,theta];
@@ -535,26 +535,22 @@ x = simout.x;
 u = simout.u;
 % Actuators real torque (continuous)
 M_act = simout.M_act;
-<<<<<<< HEAD
-% Pointing error (discrete)
-sb = simout.sb;
-=======
 % Quaternion's attitude error (discrete)
 q_err = simout.q_err;
+
 % Extract Radiation torque (SRP + Albedo + Earth IR)
 RAD_T = simout.RAD_T;
 % Extract Magnetic torque
 MAG_T = simout.T_M;
 % Extract Gravity-gradient torque
 GG_T  = simout.T_GG;
->>>>>>> f0aebdbd804b1e3bd20b1a6ce2c465d1ade11c41
 
 %% ---------- PLOTS -------------
 
 % Pre-allocate Q, error and norm_error
-Q = zeros(3, 3, length(discrete_time));
-error = zeros(3, 3, length(discrete_time));
-norm_error = zeros(1, length(discrete_time));
+Q = zeros(3, 3, length(time));
+error = zeros(3, 3, length(time));
+norm_error = zeros(1, length(time));
 
 % Plot the attitude error matrix components over time
 figure('Name','Attitude Error Matrix Components');
@@ -569,6 +565,20 @@ for i = 1:3
     end
 end
 
+% Plot the attitude error matrix components over time
+figure('Name','A_B_N Matrix Components');
+for i = 1:3
+    for j = 1:3
+        subplot(3, 3, (i-1)*3 + j);
+        plot(time, squeeze(A_B_N(i, j, :)), 'LineWidth', 1);
+        title(['A_{B_N,' num2str(i) num2str(j) '} over Time']);
+        xlabel('Time (s)');
+        ylabel(['A_{B_N,' num2str(i) num2str(j) '}']);
+        grid on;
+    end
+end
+
+
 % Testing Orthonormality of A_e
 for i = 1:length(discrete_time)
     Q(:,:,i) = A_e(:,:,i)'*A_e(:,:,i);
@@ -577,7 +587,7 @@ for i = 1:length(discrete_time)
 end
 % Plot orthonormality error of A_e
 figure('Name','Orthonormality error of A_e')
-plot(discrete_time, norm_error)
+plot(time, norm_error)
 
 
 % Plot the real and estimated angular velocity components over time
@@ -674,17 +684,11 @@ ylabel('Torque (N·m)');
 grid on;
 
 % Plot poiting error over time
-
-xb = [1;0;0];
-
-theta_point = zeros(length(discrete_time));
-for k = 1:length(discrete_time)
-    theta_point(k) = acos(dot(xb',sb(k,:)));
-end
-theta_point_deg = rad2deg(theta_point);
+q4_err = q_err(:,4);
+theta_deg = rad2deg(2*acos(q4_err)) - 180;
 
 figure('Name','Pointing error over time');
-plot(discrete_time,theta_point_deg , 'LineWidth', 1);
+plot(discrete_time, theta_deg, 'LineWidth', 1);
 title('Pointing Error vs Time');
 xlabel('Time (s)');
 ylabel('\Delta\theta_{point} [deg]');
@@ -799,97 +803,98 @@ grid on; legend('Location','best'); hold off;
 title('Magnitudes of disturbance torques');
 xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
 
-%% ---------- MONTE CARLO ANALYSIS ----------
 
-N_MC = 1;
-
-% Preallocate results
-% w_MC(sim, axis, time)
-w_MC = cell(N_MC,1);
-time_MC = cell(N_MC,1);
-
-% Save nominal values
-J_nom   = J_depl;
-w0_nom  = w0;
-a_nom   = a;
-e_nom   = e;
-incl_nom = incl;
-raan_nom = raan;
-SRP_nom = SRP;
-
-for k = 1:N_MC
-
-    fprintf('Monte Carlo run %d / %d \n', k, N_MC);
-
-    % Random seed
-    rng(k);
-    base_seed_MC = base_seed;
-    base_seed = base_seed_MC + k; 
-
-    % INERTIA (±10% sui principali, ±5% cross)
-    J_depl = J_nom .* diag(1 + 0.10*randn(3,1));
-
-    % ANGULAR VELOCITIES ±30%
-    w0 = w0_nom .* (1 + 0.30*randn(3,1));
-
-    % ORBITS UNCERTAINTIES
-    a     = a_nom    * (1 + 0.005*randn);     % ±0.5%
-    e     = max(0, e_nom + 0.001*randn);      % small variation
-    incl  = incl_nom + 0.1*randn;             % ±0.1 deg
-    raan  = raan_nom + 0.2*randn;             % ±0.2 deg
-
-    kep = [a,e,incl,raan,w,theta];
-
-    % SRP DISTURBANCES UNCERTAINTY
-    fields = fieldnames(SRP_nom);
-    for ii = 1:length(fields)
-        SRP.(fields{ii}).A = SRP_nom.(fields{ii}).A * (1 + 0.05*randn);
-        SRP.(fields{ii}).r_F = SRP_nom.(fields{ii}).r_F .* (1 + 0.10*randn(1,3));
-    end
-
-    % Simulation
-    simout = sim('SIM_SAD_DEMO','FastRestart','off');
-
-    % Saving results
-    w_MC{k} = simout.w_B;
-    time_MC{k} = simout.tout;    
-end
-
-% Creating matrix for angular velocities
-Nt = length(time_MC{1});
-w_MC_mat = zeros(N_MC,3,Nt);
-for k = 1:N_MC
-    w_MC_mat(k,:,:) = rad2deg(w_MC{k});
-end
-
-%% --------- PLOT : MONTE CARLO ANALYSIS ---------- 
-
-figure('Name','Monte Carlo Angular Velocities');
-hold on;
-N_MC = size(w_MC_mat,1);
-Nt   = size(w_MC_mat,3);
-t = time_MC{1};
-for k = 1:N_MC
-    plot(t, squeeze(w_MC_mat(k,1,:)),'LineWidth',1); % w_x
-    plot(t, squeeze(w_MC_mat(k,2,:)),'LineWidth',1); % w_y
-    plot(t, squeeze(w_MC_mat(k,3,:)),'LineWidth',1); % w_z
-end
-xlabel('Time [s]');
-ylabel('Angular velocity [deg/s]');
-title('Monte Carlo Angular Velocities (w_x, w_y, w_z)');
-grid on;
-legend({'\omega_x','\omega_y','\omega_z'});
-hold off;
-
-
-% Restoring nominal values
-J_depl = J_nom;
-w0     = w0_nom;
-a      = a_nom;
-e      = e_nom;
-incl   = incl_nom;
-raan   = raan_nom;
-SRP    = SRP_nom;
+% %% ---------- MONTE CARLO ANALYSIS ----------
+% 
+% N_MC = 50;
+% 
+% % Preallocate results
+% % w_MC(sim, axis, time)
+% w_MC = cell(N_MC,1);
+% time_MC = cell(N_MC,1);
+% 
+% % Save nominal values
+% J_nom   = J_depl;
+% w0_nom  = w0;
+% a_nom   = a;
+% e_nom   = e;
+% incl_nom = incl;
+% raan_nom = raan;
+% SRP_nom = SRP;
+% 
+% for k = 1:N_MC
+% 
+%     fprintf('Monte Carlo run %d / %d \n', k, N_MC);
+% 
+%     % Random seed
+%     rng(k);
+%     base_seed_MC = base_seed;
+%     base_seed = base_seed_MC + k; 
+% 
+%     % INERTIA (±10% sui principali, ±5% cross)
+%     J_depl = J_nom .* diag(1 + 0.10*randn(3,1));
+% 
+%     % ANGULAR VELOCITIES ±30%
+%     w0 = w0_nom .* (1 + 0.30*randn(3,1));
+% 
+%     % ORBITS UNCERTAINTIES
+%     a     = a_nom    * (1 + 0.005*randn);     % ±0.5%
+%     e     = max(0, e_nom + 0.001*randn);      % small variation
+%     incl  = incl_nom + 0.1*randn;             % ±0.1 deg
+%     raan  = raan_nom + 0.2*randn;             % ±0.2 deg
+% 
+%     kep = [a,e,incl,raan,w,theta];
+% 
+%     % SRP DISTURBANCES UNCERTAINTY
+%     fields = fieldnames(SRP_nom);
+%     for ii = 1:length(fields)
+%         SRP.(fields{ii}).A = SRP_nom.(fields{ii}).A * (1 + 0.05*randn);
+%         SRP.(fields{ii}).r_F = SRP_nom.(fields{ii}).r_F .* (1 + 0.10*randn(1,3));
+%     end
+% 
+%     % Simulation
+%     simout = sim('sim_local_SAD','FastRestart','off');
+% 
+%     % Saving results
+%     w_MC{k} = simout.w_B;
+%     time_MC{k} = simout.tout;    
+% end
+% 
+% % Creating matrix for angular velocities
+% Nt = length(time_MC{1});
+% w_MC_mat = zeros(N_MC,3,Nt);
+% for k = 1:N_MC
+%     w_MC_mat(k,:,:) = rad2deg(w_MC{k});
+% end
+% 
+% %% --------- PLOT : MONTE CARLO ANALYSIS ---------- 
+% 
+% figure('Name','Monte Carlo Angular Velocities');
+% hold on;
+% N_MC = size(w_MC_mat,1);
+% Nt   = size(w_MC_mat,3);
+% t = time_MC{1};
+% for k = 1:N_MC
+%     plot(t, squeeze(w_MC_mat(k,1,:)),'LineWidth',1); % w_x
+%     plot(t, squeeze(w_MC_mat(k,2,:)),'LineWidth',1); % w_y
+%     plot(t, squeeze(w_MC_mat(k,3,:)),'LineWidth',1); % w_z
+% end
+% xlabel('Time [s]');
+% ylabel('Angular velocity [deg/s]');
+% title('Monte Carlo Angular Velocities (w_x, w_y, w_z)');
+% grid on;
+% legend({'\omega_x','\omega_y','\omega_z'});
+% hold off;
+% 
+% 
+% % Restoring nominal values
+% J_depl = J_nom;
+% w0     = w0_nom;
+% a      = a_nom;
+% e      = e_nom;
+% incl   = incl_nom;
+% raan   = raan_nom;
+% SRP    = SRP_nom;
 
 
 
@@ -913,3 +918,5 @@ play(sc,PlaybackSpeedMultiplier=500)
 
 %Conversion a m -> km
 a = a/1000;  %[km] 
+
+

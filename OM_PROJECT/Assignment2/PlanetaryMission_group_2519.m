@@ -96,8 +96,41 @@ kep_rgt(1) = a_rgt;
 % Building initial conditions vector for the propagation
 y0_rgt = [r0_rgt; v0_rgt];
 
+%% GROUND TRACK with Satellite Communication Toolbox
+% Ground-tracks are slowly drifting away due to the realistic model of the
+% toolbox : J2 effect, accelerations...
 
-% % __________________ SINGLE 2BP propagation for both __________________
+
+if license('test','Aerospace_Toolbox')
+    disp('Satellite Communications Toolbox AVAILABLE');
+    
+    a_nom = a_nom*1000; %[m]
+    a_rgt = a_rgt*1000; %[m]
+    
+    startTime = datetime(2041,6,28,22,40,59);
+    stopTime = startTime + seconds(5*T_rgt);
+    sampleTime = 60;
+    sc = satelliteScenario(startTime,stopTime,sampleTime);
+    viewer1 = satelliteScenarioViewer(sc,"CameraReferenceFrame","ECEF","Dimension","2D");
+    viewer2 = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
+    sat1 = satellite(sc,a_nom,kep(2),rad2deg(kep(3)),rad2deg(kep(4)),...
+        rad2deg(kep(5)),rad2deg(kep(6)));
+    sat2 = satellite(sc,a_rgt,kep_rgt(2),rad2deg(kep_rgt(3)),rad2deg(kep_rgt(4)),...
+        rad2deg(kep_rgt(5)),rad2deg(kep_rgt(6)));
+    show(sat1)
+    show(sat2)
+    groundTrack(sat1,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0],"TrailTime",5*T_rgt);
+    groundTrack(sat2,"LeadTime",3600,"LeadLineColor",[1 0 0],"TrailLineColor",[1 0 0],"TrailTime",5*T_rgt);
+    play(sc,PlaybackSpeedMultiplier=2000)
+    
+    a_nom = a_nom/1000; %[km]
+    a_rgt = a_rgt/1000; %[km]
+
+else
+    disp('Satellite Communications Toolbox NOT AVAILABLE');
+end
+
+%% __________________ SINGLE 2BP propagation for both __________________
 % 
 % options = odeset('RelTol',1e-9,'AbsTol',1e-10);
 % 

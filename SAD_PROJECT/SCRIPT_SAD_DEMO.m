@@ -91,13 +91,13 @@ SRP.body1.N_hat = [1,0,0];
 SRP.body1.rho_s = 0.5;
 SRP.body1.rho_d = 0.1;
 SRP.body1.A = 6e-2;            %[m^2]
-SRP.body1.r_F = [10,0,0]*1e-2; %[m]
+SRP.body1.r_F = [10+1e-1,0,0]*1e-2; %[m]
 
 SRP.body2.N_hat = [0,1,0];
 SRP.body2.rho_s = 0.5;
 SRP.body2.rho_d = 0.1;
 SRP.body2.A = 6e-2;            %[m^2]
-SRP.body2.r_F = [0,10,0]*1e-2; %[m]
+SRP.body2.r_F = [0,10+1e-1,0]*1e-2; %[m]
 
 SRP.body3.N_hat = [-1,0,0];
 SRP.body3.rho_s = 0.5;
@@ -519,9 +519,9 @@ time = simout.tout;
 discrete_time_row = time(1):q.Ts:time(end);
 discrete_time = discrete_time_row';
 A_B_N = simout.A_B_N;
-A_B_N_ortho = simout.A_B_N_ortho;
 A_B_LVLH = simout.A_B_LVLH;
 w_B_LVLH = simout.w_B_LVLH;
+A_T_N = simout.A_T_N;
 
 % Real Angular velocity vector (continuous) 
 w_B = simout.w_B;
@@ -548,9 +548,9 @@ GG_T  = simout.T_GG;
 %% ---------- PLOTS -------------
 
 % Pre-allocate Q, error and norm_error
-Q = zeros(3, 3, length(time));
-error = zeros(3, 3, length(time));
-norm_error = zeros(1, length(time));
+Q = zeros(3, 3, length(discrete_time));
+error = zeros(3, 3, length(discrete_time));
+norm_error = zeros(1, length(discrete_time));
 
 % Plot the attitude error matrix components over time
 figure('Name','Attitude Error Matrix Components');
@@ -564,9 +564,24 @@ for i = 1:3
         grid on;
     end
 end
+% Testing Orthonormality of A_e
+for i = 1:length(discrete_time)
+    Q(:,:,i) = A_e(:,:,i)'*A_e(:,:,i);
+    error(:,:,i) = abs(eye(3)-Q(:,:,i));
+    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+end
+% Plot orthonormality error of A_e
+figure('Name','Orthonormality error of A_e')
+plot(discrete_time, norm_error)
 
-% Plot the attitude error matrix components over time
-figure('Name','A_B_N Matrix Components');
+
+% Pre-allocate Q, error and norm_error
+Q = zeros(3, 3, length(time));
+error = zeros(3, 3, length(time));
+norm_error = zeros(1, length(time));
+
+% Plot the A_B_N matrix components over time
+figure('Name','A_B_N Matrix Components over time');
 for i = 1:3
     for j = 1:3
         subplot(3, 3, (i-1)*3 + j);
@@ -577,17 +592,43 @@ for i = 1:3
         grid on;
     end
 end
-
-
-% Testing Orthonormality of A_e
-for i = 1:length(discrete_time)
-    Q(:,:,i) = A_e(:,:,i)'*A_e(:,:,i);
+% Testing Orthonormality of A_B_N
+for i = 1:length(time)
+    Q(:,:,i) = A_B_N(:,:,i)'*A_B_N(:,:,i);
     error(:,:,i) = abs(eye(3)-Q(:,:,i));
     norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
 end
-% Plot orthonormality error of A_e
-figure('Name','Orthonormality error of A_e')
+% Plot orthonormality error of A_B_N
+figure('Name','Orthonormality error of A_B_N')
 plot(time, norm_error)
+
+
+% Pre-allocate Q, error and norm_error
+Q = zeros(3, 3, length(discrete_time));
+error = zeros(3, 3, length(discrete_time));
+norm_error = zeros(1, length(discrete_time));
+
+% Plot the A_T_N matrix components over time
+figure('Name','A_T_N Matrix Components over time');
+for i = 1:3
+    for j = 1:3
+        subplot(3, 3, (i-1)*3 + j);
+        plot(discrete_time, squeeze(A_T_N(i, j, :)), 'LineWidth', 1);
+        title(['A_{T_N,' num2str(i) num2str(j) '} over Time']);
+        xlabel('Time (s)');
+        ylabel(['A_{T_N,' num2str(i) num2str(j) '}']);
+        grid on;
+    end
+end
+% Testing Orthonormality of A_T_N
+for i = 1:length(discrete_time)
+    Q(:,:,i) = A_T_N(:,:,i)'*A_T_N(:,:,i);
+    error(:,:,i) = abs(eye(3)-Q(:,:,i));
+    norm_error(i) = norm( Q(:,:,i) - eye(3), 'fro' );
+end
+% Plot orthonormality error of A_T_N
+figure('Name','Orthonormality error of A_T_N')
+plot(discrete_time, norm_error)
 
 
 % Plot the real and estimated angular velocity components over time
@@ -900,23 +941,23 @@ xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
 
 %% ----------- SATELLITE SCENARIO ----------------
 
-%Conversion a km -> m
-a = a*1000;         %[m]
-
-%Satellite Scenario 
-stopTime = startTime + seconds(2*T);
-sampleTime = 60;
-sc = satelliteScenario(startTime,stopTime,sampleTime);
-viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
-sat = satellite(sc,a,e,incl,raan,w,theta);
-show(sat)
-sat.Visual3DModel = "SmallSat.glb";
-coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
-camtarget(viewer, sat);
-groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
-play(sc,PlaybackSpeedMultiplier=500)
-
-%Conversion a m -> km
-a = a/1000;  %[km] 
+% %Conversion a km -> m
+% a = a*1000;         %[m]
+% 
+% %Satellite Scenario 
+% stopTime = startTime + seconds(2*T);
+% sampleTime = 60;
+% sc = satelliteScenario(startTime,stopTime,sampleTime);
+% viewer = satelliteScenarioViewer(sc,"CameraReferenceFrame","Inertial","Dimension","3D");
+% sat = satellite(sc,a,e,incl,raan,w,theta);
+% show(sat)
+% sat.Visual3DModel = "SmallSat.glb";
+% coordinateAxes(sat, Scale=2); % red = x_B; green = y_B; blue = z_B
+% camtarget(viewer, sat);
+% groundTrack(sat,"LeadTime",3600,"LeadLineColor",[0 1 0],"TrailLineColor",[0 1 0]);
+% play(sc,PlaybackSpeedMultiplier=500)
+% 
+% %Conversion a m -> km
+% a = a/1000;  %[km] 
 
 

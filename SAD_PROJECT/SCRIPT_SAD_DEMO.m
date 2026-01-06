@@ -726,7 +726,9 @@ grid on;
 
 % Plot poiting error over time
 q4_err = q_err(:,4);
-theta_deg = rad2deg(2*acos(q4_err));
+% Use abs(q4) to remove the q and -q ambiguity (same attitude)
+% -> angle in [0,180] deg
+theta_deg = rad2deg(2*acos(abs(q4_err)));
 
 figure('Name','Pointing error over time');
 plot(discrete_time, theta_deg, 'LineWidth', 1);
@@ -854,6 +856,16 @@ N_MC = 5;
 w_MC = cell(N_MC,1);
 time_MC = cell(N_MC,1);
 
+
+% Preallocate attitude error quaternion and pointing error
+q_err_MC = cell(N_MC,1);
+time_q_MC = cell(N_MC,1);
+theta_deg_MC = cell(N_MC,1);
+
+% Preallocate attitude error matrix diagonal terms
+A_e_diag_MC = cell(N_MC,1);
+time_Ae_MC   = cell(N_MC,1);
+
 % Save nominal values
 J_nom   = J_depl;
 w0_nom  = w0;
@@ -899,6 +911,49 @@ for k = 1:N_MC
     % Saving results
     w_MC{k} = simout.w_B;
     time_MC{k} = simout.tout;    
+
+    % Saving attitude error quaternion (discrete) and computing pointing error
+    q_err_MC{k} = simout.q_err;
+
+% Saving attitude error matrix (discrete) - store only diagonal terms
+    A_e_k = simout.A_e;
+    % Expected shape: 3x3xN (as in single-run plots)
+    if ndims(A_e_k) == 3 && all(size(A_e_k,1:2) == [3 3])
+        Ae11 = squeeze(A_e_k(1,1,:));
+        Ae22 = squeeze(A_e_k(2,2,:));
+        Ae33 = squeeze(A_e_k(3,3,:));
+        A_e_diag_MC{k} = [Ae11(:), Ae22(:), Ae33(:)]; % Nx3
+        time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), numel(Ae11)).';
+    else
+        % Fallback: try to interpret as Nx9 or 9xN (column-major flattening)
+        A_e_flat = squeeze(A_e_k);
+        if ismatrix(A_e_flat)
+            if size(A_e_flat,2) == 9
+                % Nx9: columns correspond to [a11 a21 a31 a12 a22 a32 a13 a23 a33]
+                A_e_diag_MC{k} = [A_e_flat(:,1), A_e_flat(:,5), A_e_flat(:,9)];
+                time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), size(A_e_flat,1)).';
+            elseif size(A_e_flat,1) == 9
+                % 9xN
+                A_e_diag_MC{k} = [A_e_flat(1,:).', A_e_flat(5,:).', A_e_flat(9,:).'];
+                time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), size(A_e_flat,2)).';
+            else
+                A_e_diag_MC{k} = [];
+                time_Ae_MC{k}  = [];
+                warning('A_e has unexpected size %s in MC run %d. Skipping A_e diag storage.', mat2str(size(A_e_k)), k);
+            end
+        end
+    end
+
+    discrete_time_MC = (simout.tout(1):q.Ts:simout.tout(end))';
+    if length(discrete_time_MC) ~= size(q_err_MC{k},1)
+        discrete_time_MC = linspace(simout.tout(1), simout.tout(end), size(q_err_MC{k},1))';
+    end
+    time_q_MC{k} = discrete_time_MC;
+
+    q4_err_MC = q_err_MC{k}(:,4); % scalar-last
+    % Use abs(q4) to remove the q and -q ambiguity (same attitude)
+    theta_deg_MC{k} = rad2deg(2*acos(abs(q4_err_MC)));
+    % usare abs(q4_err_MC) -> theta_deg_MC{k} = rad2deg(2*acos(abs(q4_err_MC)));
 end
 
 % Creating matrix for angular velocities
@@ -927,6 +982,44 @@ title('Monte Carlo Angular Velocities (w_x, w_y, w_z)');
 grid on;
 legend({'\omega_x','\omega_y','\omega_z'});
 hold off;
+
+% Plot Monte Carlo pointing error (same definition used in the single-run section)
+figure('Name','Monte Carlo Pointing Error');
+hold on;
+for k = 1:N_MC
+    plot(time_q_MC{k}, theta_deg_MC{k}, 'LineWidth', 1);
+end
+xlabel('Time [s]');
+ylabel('\Delta\theta_{point} [deg]');
+title('Monte Carlo Pointing Error');
+grid on;
+hold off;
+
+% Plot Monte Carlo attitude error matrix diagonal terms (A_e(1,1), A_e(2,2), A_e(3,3))
+figure('Name','Monte Carlo Attitude Error Matrix - Diagonal Terms');
+tiledlayout(3,1);
+nexttile; hold on;
+for k = 1:N_MC
+    if ~isempty(A_e_diag_MC{k})
+        plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,1), 'LineWidth', 1);
+    end
+end
+title('A_{e,11}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
+nexttile; hold on;
+for k = 1:N_MC
+    if ~isempty(A_e_diag_MC{k})
+        plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,2), 'LineWidth', 1);
+    end
+end
+title('A_{e,22}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
+nexttile; hold on;
+for k = 1:N_MC
+    if ~isempty(A_e_diag_MC{k})
+        plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,3), 'LineWidth', 1);
+    end
+end
+title('A_{e,33}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
+
 
 
 % Restoring nominal values

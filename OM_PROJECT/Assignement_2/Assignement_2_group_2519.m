@@ -259,7 +259,7 @@ for icase = case_list
         hDot_rgt = plot3(NaN,NaN,NaN, 'ro', 'MarkerSize', 6, 'LineWidth', 1.5, 'HandleVisibility','off');
 
     else
-        plot3(r_nom(:,1), r_nom(:,2), r_nom(:,3),'LineWidth', 5, 'Color', 'g', 'DisplayName', 'Nominal orbit')
+        plot3(r_nom(:,1), r_nom(:,2), r_nom(:,3),'LineWidth', 3, 'Color', 'g', 'DisplayName', 'Nominal orbit')
         % plot3(r_rgt(:,1), r_rgt(:,2), r_rgt(:,3),'LineWidth', 5, 'Color', 'r', 'DisplayName', 'RGT orbit')
     end
 
@@ -945,7 +945,7 @@ surface(X, Y, Z, C, 'FaceColor','none','EdgeColor','interp','LineWidth',2)
 
 colormap("parula");
 cb = colorbar;
-cb.Label.String = 'Numero di periodi (t/T)';
+cb.Label.String = 'Number of periods (t/T)';
 
 xlabel('X [km]')
 ylabel('Y [km]')
@@ -1007,7 +1007,7 @@ surf(xe, ye, ze,'CData', earth_img,'FaceColor','texturemap',EdgeColor='none',Han
 surface(X, Y, Z, C, 'FaceColor','none','EdgeColor','interp','LineWidth',2)
 colormap("parula");
 cb = colorbar;
-cb.Label.String = 'Numero di periodi (t/T)';
+cb.Label.String = 'Number of periods (t/T)';
 xlabel('X [km]')
 ylabel('Y [km]')
 zlabel('Z [km]')

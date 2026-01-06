@@ -201,6 +201,9 @@ F0 = 237; %[W/m^2]
 %% ---------- GG torque (for inclined and elliptical orbits) ------------
 
 % Adimensional coefficients for stability
+
+disp('Inertial moments on the three axis are:\n');
+
 I_moments = diag(J_depl);
 K_yaw = (I_moments(3)-I_moments(2))/I_moments(1)
 K_roll = (I_moments(3)-I_moments(1))/I_moments(2)
@@ -210,9 +213,9 @@ K_pitch = (I_moments(2)-I_moments(1))/I_moments(3)
 % STABILITY CONDITIONS HERE ARE FOR NADIR POINTING CASE MAYBE : VERIFY!!!!
 % Verify Stability conditions
 if((K_roll*K_yaw>0) && ( (1+3*K_roll+K_roll*K_yaw)^2 > 16*K_yaw*K_roll) )
-    disp('Stability conditions are satisfied.');
+    disp('\nStability conditions are satisfied.');
 else
-    disp('Stability conditions are not satisfied.');
+    disp('\nStability conditions are not satisfied.');
 end
 
 
@@ -393,8 +396,8 @@ B = [1/J_depl(1), 0, 0;...
 C = ctrb(A,B);
 % Display the rank of matrix C
 rank_C = rank(C);
-disp(['The rank of matrix C is: ', num2str(rank_C),', equal to the number of states.' ...
-    ' So the system is controllable.']);
+disp(['\nThe rank of matrix C is: ', num2str(rank_C),', equal to the number of states.' ...
+    '\nSo the system is controllable.']);
 
 % Checking observability
 C_obs = eye(6); %Output matrix C_obs
@@ -408,8 +411,8 @@ fprintf('Rank of observability matrix: %d\n', rank_Ob);
 if rank_Ob == n_states
     disp('Completely observable system');
 else
-    disp('Non observable system');
-    disp('Verify availabilty of sensors or C_obs matrix definition');
+    disp('\nNon observable system');
+    disp('\nVerify availabilty of sensors or C_obs matrix definition');
 end
 
 % DEFINING THRESHOLDS FOR THE DIFFERENT CASES 
@@ -555,6 +558,7 @@ for i = 1:3
     end
 end
 % Testing Orthonormality of A_e
+
 for i = 1:length(discrete_time)
     Q(:,:,i) = A_e(:,:,i)'*A_e(:,:,i);
     error(:,:,i) = abs(eye(3)-Q(:,:,i));
@@ -741,7 +745,7 @@ elseif size(RAD_T,2) == 3              % Nx3
 elseif size(RAD_T,1) == 3              % 3xN already
     RAD = RAD_T;
 else
-    error('RAD_T has unexpected size %s', mat2str(size(RAD_T)));
+    error('\nRAD_T has unexpected size %s', mat2str(size(RAD_T)));
 end
 
 % --- Normalize MAG_T (column per step) to 3xN ---
@@ -755,7 +759,7 @@ elseif size(MAG_T,1) == 3              % 3xN
 elseif size(MAG_T,2) == 3              % Nx3
     MAG = MAG_T.';                     % -> 3xN
 else
-    error('MAG_T has unexpected size %s', mat2str(size(MAG_T)));
+    error('\nMAG_T has unexpected size %s', mat2str(size(MAG_T)));
 end
 
 % --- Normalize GG_T (row per step) to 3xN ---
@@ -768,7 +772,7 @@ elseif size(GG_T,2) == 3               % Nx3
 elseif size(GG_T,1) == 3               % 3xN
     GG = GG_T;
 else
-    error('GG_T has unexpected size %s', mat2str(size(GG_T)));
+    error('\nGG_T has unexpected size %s', mat2str(size(GG_T)));
 end
 
 % --- Trim or pad to match time length exactly ---

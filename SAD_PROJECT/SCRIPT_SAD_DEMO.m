@@ -464,7 +464,7 @@ M_RW_max = 8e-3; % [Nm]
 M_M_max = 1e-4; % [Nm]
 
 x_max = [Control.w_pointing,Control.w_pointing, Control.w_pointing, alpha_max, alpha_max, alpha_max]; 
-u_max = [M_M_max, M_M_max, M_RW_max];
+u_max = [M_RW_max, M_RW_max, M_RW_max];
 
 Q = diag(1./(x_max).^2); 
 R = diag(1./(u_max).^2);
@@ -509,7 +509,7 @@ RW.omega_max = 5000 * (2*pi/60); % rad/s (5000rpm)
 RW.Iw_est = RW.h_max / RW.omega_max; % kg*m^2
 
 % A Matrix for RW (vector, 1 RW on z axis)
-RW.A = [0;0;1];
+RW.A = [1/sqrt(3);1/sqrt(3);1/sqrt(3)];
 
 
 %% -------------- SIMULATION  ------------
@@ -726,7 +726,7 @@ grid on;
 
 % Plot poiting error over time
 q4_err = q_err(:,4);
-theta_deg = rad2deg(2*acos(q4_err)) - 180;
+theta_deg = rad2deg(2*acos(q4_err));
 
 figure('Name','Pointing error over time');
 plot(discrete_time, theta_deg, 'LineWidth', 1);

@@ -91,61 +91,61 @@ SRP.body1.N_hat = [1,0,0];
 SRP.body1.rho_s = 0.5;
 SRP.body1.rho_d = 0.1;
 SRP.body1.A = 6e-2;            %[m^2]
-SRP.body1.r_F = [10+1e-1,0,0]*1e-2; %[m]
+SRP.body1.r_F = [10+3e-1,0,0]*1e-2; %[m]
 
 SRP.body2.N_hat = [0,1,0];
 SRP.body2.rho_s = 0.5;
 SRP.body2.rho_d = 0.1;
 SRP.body2.A = 6e-2;            %[m^2]
-SRP.body2.r_F = [0,10+1e-1,0]*1e-2; %[m]
+SRP.body2.r_F = [0,10+3e-1,0]*1e-2; %[m]
 
 SRP.body3.N_hat = [-1,0,0];
 SRP.body3.rho_s = 0.5;
 SRP.body3.rho_d = 0.1;
 SRP.body3.A = 6e-2;            %[m^2]
-SRP.body3.r_F = [-10,0,0]*1e-2; %[m]
+SRP.body3.r_F = [-10+3e-1,0,0]*1e-2; %[m]
 
 SRP.body4.N_hat = [0,-1,0];
 SRP.body4.rho_s = 0.5;
 SRP.body4.rho_d = 0.1;
 SRP.body4.A = 6e-2;            %[m^2]
-SRP.body4.r_F = [0,-10,0]*1e-2;       %[m]
+SRP.body4.r_F = [0,-10+3e-1,0]*1e-2;       %[m]
 
 SRP.body5.N_hat = [0,0,1];
 SRP.body5.rho_s = 0.5;
 SRP.body5.rho_d = 0.1;
 SRP.body5.A = 4e-2;            %[m^2]
-SRP.body5.r_F = [0,0,+15]*1e-2;       %[m]
+SRP.body5.r_F = [0,0,+15+3e-1]*1e-2;       %[m]
 
 SRP.body6.N_hat = [0,0,-1];
 SRP.body6.rho_s = 0.5;
 SRP.body6.rho_d = 0.1;
 SRP.body6.A = 4e-2;            %[m^2]
-SRP.body6.r_F = [0,0,-15]*1e-2; %[m]
+SRP.body6.r_F = [0,0,-15+3e-1]*1e-2; %[m]
 
 SRP.panel1.N_hat = [+1,0,0];
 SRP.panel1.rho_s = 0.1;
 SRP.panel1.rho_d = 0.1;
 SRP.panel1.A = 12e-2;            %[m^2]
-SRP.panel1.r_F = [0,45,0]*1e-2; %[m]
+SRP.panel1.r_F = [0,45+3e-1,0]*1e-2; %[m]
 
 SRP.panel2.N_hat = [-1,0,0];
 SRP.panel2.rho_s = 0.1;
 SRP.panel2.rho_d = 0.1;
 SRP.panel2.A = 12e-2;            %[m^2]
-SRP.panel2.r_F = [0,45,0]*1e-2; %[m]
+SRP.panel2.r_F = [0,45+3e-1,0]*1e-2; %[m]
 
 SRP.panel3.N_hat = [+1,0,0];
 SRP.panel3.rho_s = 0.1;
 SRP.panel3.rho_d = 0.1;
 SRP.panel3.A = 12e-2;            %[m^2]
-SRP.panel3.r_F = [0,-45,0]*1e-2; %[m]
+SRP.panel3.r_F = [0,-45+3e-1,0]*1e-2; %[m]
 
 SRP.panel4.N_hat = [-1,0,0];
 SRP.panel4.rho_s = 0.1;
 SRP.panel4.rho_d = 0.1;
 SRP.panel4.A = 12e-2;            %[m^2]
-SRP.panel4.r_F = [0,-45,0]*1e-2; %[m]
+SRP.panel4.r_F = [0,-45+3e-1,0]*1e-2; %[m]
 
 % Note that SRP torque DOES NOT DEPEND on initial conditions on omega, or
 % satellite properties in terms of inertia. It only depends on the distance
@@ -184,16 +184,16 @@ Aree(7:10)=12e-2;
 
 
 rf=[
-    10e-2 0 0;
-    0 10e-2 0;
-    -10e-2 0 0;
-    0 -10e-2 0;
-    0 0 15e-2;
-    0 0 -15e-2;
-    0 45e-2 0;
-    0 45e-2 0;
-    0 -45e-2 0;
-    0 -45e-2 0;
+    10e-2+3e-3 0 0;
+    0 10e-2+3e-3 0;
+    -10e-2+3e-3 0 0;
+    0 -10e-2+3e-3 0;
+    0 0 15e-2+3e-3;
+    0 0 -15e-2+3e-3;
+    0 45e-2+3e-3 0;
+    0 45e-2+3e-3 0;
+    0 -45e-2+3e-3 0;
+    0 -45e-2+3e-3 0;
 ];
 
 F0 = 237; %[W/m^2]
@@ -837,189 +837,189 @@ title('Magnitudes of disturbance torques');
 xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
 
 
-%% ---------- MONTE CARLO ANALYSIS ----------
-
-N_MC = 100;
-
-% Preallocate results
-% w_MC(sim, axis, time)
-w_MC = cell(N_MC,1);
-time_MC = cell(N_MC,1);
-
-
-% Preallocate attitude error quaternion and pointing error
-q_err_MC = cell(N_MC,1);
-time_q_MC = cell(N_MC,1);
-theta_deg_MC = cell(N_MC,1);
-
-% Preallocate attitude error matrix diagonal terms
-A_e_diag_MC = cell(N_MC,1);
-time_Ae_MC   = cell(N_MC,1);
-
-% Save nominal values
-J_nom   = J_depl;
-w0_nom  = w0;
-a_nom   = a;
-e_nom   = e;
-incl_nom = incl;
-raan_nom = raan;
-SRP_nom = SRP;
-
-for k = 1:N_MC
-
-    fprintf('Monte Carlo run %d / %d \n', k, N_MC);
-
-    % Random seed
-    rng(k);
-    base_seed_MC = base_seed;
-    base_seed = base_seed_MC + k; 
-
-    % INERTIA (±10% sui principali, ±5% cross)
-    J_depl = J_nom .* diag(1 + 0.10*randn(3,1));
-
-    % ANGULAR VELOCITIES ±30%
-    w0 = w0_nom .* (1 + 0.30*randn(3,1));
-
-    % ORBITS UNCERTAINTIES
-    a     = a_nom    * (1 + 0.005*randn);     % ±0.5%
-    e     = max(0, e_nom + 0.001*randn);      % small variation
-    incl  = incl_nom + 0.1*randn;             % ±0.1 deg
-    raan  = raan_nom + 0.2*randn;             % ±0.2 deg
-
-    kep = [a,e,incl,raan,w,theta];
-
-    % SRP DISTURBANCES UNCERTAINTY
-    fields = fieldnames(SRP_nom);
-    for ii = 1:length(fields)
-        SRP.(fields{ii}).A = SRP_nom.(fields{ii}).A * (1 + 0.05*randn);
-        SRP.(fields{ii}).r_F = SRP_nom.(fields{ii}).r_F .* (1 + 0.10*randn(1,3));
-    end
-
-    % Simulation
-    simout = sim('SIM_SAD_DEMO','FastRestart','off');
-
-    % Saving results
-    w_MC{k} = simout.w_B;
-    time_MC{k} = simout.tout;    
-
-    % Saving attitude error quaternion (discrete) and computing pointing error
-    q_err_MC{k} = simout.q_err;
-
-% Saving attitude error matrix (discrete) - store only diagonal terms
-    A_e_k = simout.A_e;
-    % Expected shape: 3x3xN (as in single-run plots)
-    if ndims(A_e_k) == 3 && all(size(A_e_k,1:2) == [3 3])
-        Ae11 = squeeze(A_e_k(1,1,:));
-        Ae22 = squeeze(A_e_k(2,2,:));
-        Ae33 = squeeze(A_e_k(3,3,:));
-        A_e_diag_MC{k} = [Ae11(:), Ae22(:), Ae33(:)]; % Nx3
-        time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), numel(Ae11)).';
-    else
-        % Fallback: try to interpret as Nx9 or 9xN (column-major flattening)
-        A_e_flat = squeeze(A_e_k);
-        if ismatrix(A_e_flat)
-            if size(A_e_flat,2) == 9
-                % Nx9: columns correspond to [a11 a21 a31 a12 a22 a32 a13 a23 a33]
-                A_e_diag_MC{k} = [A_e_flat(:,1), A_e_flat(:,5), A_e_flat(:,9)];
-                time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), size(A_e_flat,1)).';
-            elseif size(A_e_flat,1) == 9
-                % 9xN
-                A_e_diag_MC{k} = [A_e_flat(1,:).', A_e_flat(5,:).', A_e_flat(9,:).'];
-                time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), size(A_e_flat,2)).';
-            else
-                A_e_diag_MC{k} = [];
-                time_Ae_MC{k}  = [];
-                warning('A_e has unexpected size %s in MC run %d. Skipping A_e diag storage.', mat2str(size(A_e_k)), k);
-            end
-        end
-    end
-
-    discrete_time_MC = (simout.tout(1):q.Ts:simout.tout(end))';
-    if length(discrete_time_MC) ~= size(q_err_MC{k},1)
-        discrete_time_MC = linspace(simout.tout(1), simout.tout(end), size(q_err_MC{k},1))';
-    end
-    time_q_MC{k} = discrete_time_MC;
-
-    q4_err_MC = q_err_MC{k}(:,4); % scalar-last
-    % Use abs(q4) to remove the q and -q ambiguity (same attitude)
-    theta_deg_MC{k} = rad2deg(2*acos(abs(q4_err_MC)));
-    % usare abs(q4_err_MC) -> theta_deg_MC{k} = rad2deg(2*acos(abs(q4_err_MC)));
-end
-
-% Creating matrix for angular velocities
-Nt = length(time_MC{1});
-w_MC_mat = zeros(N_MC,3,Nt);
-for k = 1:N_MC
-    w_MC_mat(k,:,:) = rad2deg(w_MC{k});
-end
-
-
-%% --------- PLOT : MONTE CARLO ANALYSIS ---------- 
-
-figure('Name','Monte Carlo Angular Velocities');
-hold on;
-N_MC = size(w_MC_mat,1);
-Nt   = size(w_MC_mat,3);
-t = time_MC{1};
-for k = 1:N_MC
-    plot(t, squeeze(w_MC_mat(k,1,:)),'LineWidth',1); % w_x
-    plot(t, squeeze(w_MC_mat(k,2,:)),'LineWidth',1); % w_y
-    plot(t, squeeze(w_MC_mat(k,3,:)),'LineWidth',1); % w_z
-end
-xlabel('Time [s]');
-ylabel('Angular velocity [deg/s]');
-title('Monte Carlo Angular Velocities (w_x, w_y, w_z)');
-grid on;
-legend({'\omega_x','\omega_y','\omega_z'});
-hold off;
-
-% Plot Monte Carlo pointing error (same definition used in the single-run section)
-figure('Name','Monte Carlo Pointing Error');
-hold on;
-for k = 1:N_MC
-    plot(time_q_MC{k}, theta_deg_MC{k}, 'LineWidth', 1);
-end
-xlabel('Time [s]');
-ylabel('\Delta\theta_{point} [deg]');
-title('Monte Carlo Pointing Error');
-grid on;
-hold off;
-
-% Plot Monte Carlo attitude error matrix diagonal terms (A_e(1,1), A_e(2,2), A_e(3,3))
-figure('Name','Monte Carlo Attitude Error Matrix - Diagonal Terms');
-tiledlayout(3,1);
-nexttile; hold on;
-for k = 1:N_MC
-    if ~isempty(A_e_diag_MC{k})
-        plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,1), 'LineWidth', 1);
-    end
-end
-title('A_{e,11}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
-nexttile; hold on;
-for k = 1:N_MC
-    if ~isempty(A_e_diag_MC{k})
-        plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,2), 'LineWidth', 1);
-    end
-end
-title('A_{e,22}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
-nexttile; hold on;
-for k = 1:N_MC
-    if ~isempty(A_e_diag_MC{k})
-        plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,3), 'LineWidth', 1);
-    end
-end
-title('A_{e,33}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
-
-
-
-% Restoring nominal values
-J_depl = J_nom;
-w0     = w0_nom;
-a      = a_nom;
-e      = e_nom;
-incl   = incl_nom;
-raan   = raan_nom;
-SRP    = SRP_nom;
+% %% ---------- MONTE CARLO ANALYSIS ----------
+% 
+% N_MC = 100;
+% 
+% % Preallocate results
+% % w_MC(sim, axis, time)
+% w_MC = cell(N_MC,1);
+% time_MC = cell(N_MC,1);
+% 
+% 
+% % Preallocate attitude error quaternion and pointing error
+% q_err_MC = cell(N_MC,1);
+% time_q_MC = cell(N_MC,1);
+% theta_deg_MC = cell(N_MC,1);
+% 
+% % Preallocate attitude error matrix diagonal terms
+% A_e_diag_MC = cell(N_MC,1);
+% time_Ae_MC   = cell(N_MC,1);
+% 
+% % Save nominal values
+% J_nom   = J_depl;
+% w0_nom  = w0;
+% a_nom   = a;
+% e_nom   = e;
+% incl_nom = incl;
+% raan_nom = raan;
+% SRP_nom = SRP;
+% 
+% for k = 1:N_MC
+% 
+%     fprintf('Monte Carlo run %d / %d \n', k, N_MC);
+% 
+%     % Random seed
+%     rng(k);
+%     base_seed_MC = base_seed;
+%     base_seed = base_seed_MC + k; 
+% 
+%     % INERTIA (±10% sui principali, ±5% cross)
+%     J_depl = J_nom .* diag(1 + 0.10*randn(3,1));
+% 
+%     % ANGULAR VELOCITIES ±30%
+%     w0 = w0_nom .* (1 + 0.30*randn(3,1));
+% 
+%     % ORBITS UNCERTAINTIES
+%     a     = a_nom    * (1 + 0.005*randn);     % ±0.5%
+%     e     = max(0, e_nom + 0.001*randn);      % small variation
+%     incl  = incl_nom + 0.1*randn;             % ±0.1 deg
+%     raan  = raan_nom + 0.2*randn;             % ±0.2 deg
+% 
+%     kep = [a,e,incl,raan,w,theta];
+% 
+%     % SRP DISTURBANCES UNCERTAINTY
+%     fields = fieldnames(SRP_nom);
+%     for ii = 1:length(fields)
+%         SRP.(fields{ii}).A = SRP_nom.(fields{ii}).A * (1 + 0.05*randn);
+%         SRP.(fields{ii}).r_F = SRP_nom.(fields{ii}).r_F .* (1 + 0.10*randn(1,3));
+%     end
+% 
+%     % Simulation
+%     simout = sim('SIM_SAD_DEMO','FastRestart','off');
+% 
+%     % Saving results
+%     w_MC{k} = simout.w_B;
+%     time_MC{k} = simout.tout;    
+% 
+%     % Saving attitude error quaternion (discrete) and computing pointing error
+%     q_err_MC{k} = simout.q_err;
+% 
+% % Saving attitude error matrix (discrete) - store only diagonal terms
+%     A_e_k = simout.A_e;
+%     % Expected shape: 3x3xN (as in single-run plots)
+%     if ndims(A_e_k) == 3 && all(size(A_e_k,1:2) == [3 3])
+%         Ae11 = squeeze(A_e_k(1,1,:));
+%         Ae22 = squeeze(A_e_k(2,2,:));
+%         Ae33 = squeeze(A_e_k(3,3,:));
+%         A_e_diag_MC{k} = [Ae11(:), Ae22(:), Ae33(:)]; % Nx3
+%         time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), numel(Ae11)).';
+%     else
+%         % Fallback: try to interpret as Nx9 or 9xN (column-major flattening)
+%         A_e_flat = squeeze(A_e_k);
+%         if ismatrix(A_e_flat)
+%             if size(A_e_flat,2) == 9
+%                 % Nx9: columns correspond to [a11 a21 a31 a12 a22 a32 a13 a23 a33]
+%                 A_e_diag_MC{k} = [A_e_flat(:,1), A_e_flat(:,5), A_e_flat(:,9)];
+%                 time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), size(A_e_flat,1)).';
+%             elseif size(A_e_flat,1) == 9
+%                 % 9xN
+%                 A_e_diag_MC{k} = [A_e_flat(1,:).', A_e_flat(5,:).', A_e_flat(9,:).'];
+%                 time_Ae_MC{k}  = linspace(simout.tout(1), simout.tout(end), size(A_e_flat,2)).';
+%             else
+%                 A_e_diag_MC{k} = [];
+%                 time_Ae_MC{k}  = [];
+%                 warning('A_e has unexpected size %s in MC run %d. Skipping A_e diag storage.', mat2str(size(A_e_k)), k);
+%             end
+%         end
+%     end
+% 
+%     discrete_time_MC = (simout.tout(1):q.Ts:simout.tout(end))';
+%     if length(discrete_time_MC) ~= size(q_err_MC{k},1)
+%         discrete_time_MC = linspace(simout.tout(1), simout.tout(end), size(q_err_MC{k},1))';
+%     end
+%     time_q_MC{k} = discrete_time_MC;
+% 
+%     q4_err_MC = q_err_MC{k}(:,4); % scalar-last
+%     % Use abs(q4) to remove the q and -q ambiguity (same attitude)
+%     theta_deg_MC{k} = rad2deg(2*acos(abs(q4_err_MC)));
+%     % usare abs(q4_err_MC) -> theta_deg_MC{k} = rad2deg(2*acos(abs(q4_err_MC)));
+% end
+% 
+% % Creating matrix for angular velocities
+% Nt = length(time_MC{1});
+% w_MC_mat = zeros(N_MC,3,Nt);
+% for k = 1:N_MC
+%     w_MC_mat(k,:,:) = rad2deg(w_MC{k});
+% end
+% 
+% 
+% %% --------- PLOT : MONTE CARLO ANALYSIS ---------- 
+% 
+% figure('Name','Monte Carlo Angular Velocities');
+% hold on;
+% N_MC = size(w_MC_mat,1);
+% Nt   = size(w_MC_mat,3);
+% t = time_MC{1};
+% for k = 1:N_MC
+%     plot(t, squeeze(w_MC_mat(k,1,:)),'LineWidth',1); % w_x
+%     plot(t, squeeze(w_MC_mat(k,2,:)),'LineWidth',1); % w_y
+%     plot(t, squeeze(w_MC_mat(k,3,:)),'LineWidth',1); % w_z
+% end
+% xlabel('Time [s]');
+% ylabel('Angular velocity [deg/s]');
+% title('Monte Carlo Angular Velocities (w_x, w_y, w_z)');
+% grid on;
+% legend({'\omega_x','\omega_y','\omega_z'});
+% hold off;
+% 
+% % Plot Monte Carlo pointing error (same definition used in the single-run section)
+% figure('Name','Monte Carlo Pointing Error');
+% hold on;
+% for k = 1:N_MC
+%     plot(time_q_MC{k}, theta_deg_MC{k}, 'LineWidth', 1);
+% end
+% xlabel('Time [s]');
+% ylabel('\Delta\theta_{point} [deg]');
+% title('Monte Carlo Pointing Error');
+% grid on;
+% hold off;
+% 
+% % Plot Monte Carlo attitude error matrix diagonal terms (A_e(1,1), A_e(2,2), A_e(3,3))
+% figure('Name','Monte Carlo Attitude Error Matrix - Diagonal Terms');
+% tiledlayout(3,1);
+% nexttile; hold on;
+% for k = 1:N_MC
+%     if ~isempty(A_e_diag_MC{k})
+%         plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,1), 'LineWidth', 1);
+%     end
+% end
+% title('A_{e,11}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
+% nexttile; hold on;
+% for k = 1:N_MC
+%     if ~isempty(A_e_diag_MC{k})
+%         plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,2), 'LineWidth', 1);
+%     end
+% end
+% title('A_{e,22}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
+% nexttile; hold on;
+% for k = 1:N_MC
+%     if ~isempty(A_e_diag_MC{k})
+%         plot(time_Ae_MC{k}, A_e_diag_MC{k}(:,3), 'LineWidth', 1);
+%     end
+% end
+% title('A_{e,33}'); xlabel('Time [s]'); ylabel('[-]'); grid on; hold off;
+% 
+% 
+% 
+% % Restoring nominal values
+% J_depl = J_nom;
+% w0     = w0_nom;
+% a      = a_nom;
+% e      = e_nom;
+% incl   = incl_nom;
+% raan   = raan_nom;
+% SRP    = SRP_nom;
 
 
 

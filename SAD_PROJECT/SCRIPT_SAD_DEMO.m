@@ -216,16 +216,6 @@ else
 end
 
 
-%% -------- Magnetic Torque (IGRF 2025 Model) - Optimization Cycle for B ------
-
-g_tab = readmatrix("IGRF14_g_coeffs_2025.csv");
-h_tab = readmatrix("IGRF14_h_coeffs_2025.csv");
-
-% Cycle from N = 2 
-for N = 1:13
-    
-end 
-
 %% ------------- Magnetic Torque (IGRF 2025 Model) ----------------
 
 JD0 = juliandate(startTime);            % Conversion in Julian Date
@@ -849,7 +839,7 @@ xlabel('Time (s)'); ylabel('Torque magnitude [N·m]');
 
 %% ---------- MONTE CARLO ANALYSIS ----------
 
-N_MC = 5;
+N_MC = 100;
 
 % Preallocate results
 % w_MC(sim, axis, time)

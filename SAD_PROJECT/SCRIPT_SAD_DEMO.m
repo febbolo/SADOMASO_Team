@@ -202,7 +202,7 @@ F0 = 237; %[W/m^2]
 
 % Adimensional coefficients for stability
 
-disp('Inertial moments on the three axis are:\n');
+fprintf('\nStability coefficients on the three axis are:\n');
 
 I_moments = diag(J_depl);
 K_yaw = (I_moments(3)-I_moments(2))/I_moments(1)
@@ -210,12 +210,11 @@ K_roll = (I_moments(3)-I_moments(1))/I_moments(2)
 K_pitch = (I_moments(2)-I_moments(1))/I_moments(3)
 
 
-% STABILITY CONDITIONS HERE ARE FOR NADIR POINTING CASE MAYBE : VERIFY!!!!
 % Verify Stability conditions
 if((K_roll*K_yaw>0) && ( (1+3*K_roll+K_roll*K_yaw)^2 > 16*K_yaw*K_roll) )
-    disp('\nStability conditions are satisfied.');
+    fprintf('\nStability conditions are satisfied.\n');
 else
-    disp('\nStability conditions are not satisfied.');
+    fprintf('\nStability conditions are not satisfied.\n');
 end
 
 
@@ -392,27 +391,34 @@ B = [1/J_depl(1), 0, 0;...
      0, 0, 0;...
      0, 0, 0];
 
-% Checking controllability 
+% Checking controllability
 C = ctrb(A,B);
 % Display the rank of matrix C
 rank_C = rank(C);
-disp(['\nThe rank of matrix C is: ', num2str(rank_C),', equal to the number of states.' ...
-    '\nSo the system is controllable.']);
+n_states = size(A, 1);
+fprintf('\n--- Controllability ---\n');
+fprintf('Number of states: %d\n', n_states);
+fprintf('Rank of controllability matrix: %d\n', rank_Ob);
+if rank_C == n_states
+    fprintf('Completely controllable system');
+else
+    fprintf('\nNon controllable system');
+end
+
 
 % Checking observability
 C_obs = eye(6); %Output matrix C_obs
 Ob = obsv(A, C_obs);
 % Display the rank of matrix Ob
 rank_Ob = rank(Ob);
-n_states = size(A, 1);
-fprintf('\n--- Observability ---\n');
-fprintf('Numero of states: %d\n', n_states);
+fprintf('\n\n--- Observability ---\n');
+fprintf('Number of states: %d\n', n_states);
 fprintf('Rank of observability matrix: %d\n', rank_Ob);
 if rank_Ob == n_states
-    disp('Completely observable system');
+    fprintf('Completely observable system');
 else
-    disp('\nNon observable system');
-    disp('\nVerify availabilty of sensors or C_obs matrix definition');
+    fprintf('\nNon observable system');
+    fprintf('\nVerify availabilty of sensors or C_obs matrix definition');
 end
 
 % DEFINING THRESHOLDS FOR THE DIFFERENT CASES 

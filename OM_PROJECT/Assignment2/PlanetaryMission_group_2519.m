@@ -774,7 +774,7 @@ view(3)
 kep_from_cart = zeros(length(t),6);
 
 for k = 1:length(t)
-    kep_from_cart(k,:) = car2kep(cart.r(k,:)', cart.v(k,:)', Primary.mu).';
+    kep_from_cart(k,:) = car2kep_L(cart.r(k,:)', cart.v(k,:)', Primary.mu).';
 end
 
 % For filtering
@@ -978,7 +978,7 @@ COSMOS.r = zeros(N,3);
 COSMOS.v = zeros(N,3);
 
 for j=1:N
-    [COSMOS.r(j,:), COSMOS.v(j,:)] = Kep2Car(COSMOS.avec(j), COSMOS.evec(j), COSMOS.ivec(j),COSMOS.Raanvec(j), COSMOS.omegavec(j), COSMOS.theta0vec(j), Primary.mu);
+    [COSMOS.r(j,:), COSMOS.v(j,:)] = Kep2Car_L(COSMOS.avec(j), COSMOS.evec(j), COSMOS.ivec(j),COSMOS.Raanvec(j), COSMOS.omegavec(j), COSMOS.theta0vec(j), Primary.mu);
 end
 
 X = [COSMOS.r(:,1), COSMOS.r(:,1)];
@@ -1042,7 +1042,7 @@ dt = 3600;
 GPS_BIIR.tvec = (0:length(GPS_BIIR.evec)-1) * dt;
 
 for j=1:length(GPS_BIIR.evec)
-     [GPS_BIIR.r(j,:), GPS_BIIR.v(j,:)] = Kep2Car(GPS_BIIR.avec(j,1), GPS_BIIR.evec(j,1), GPS_BIIR.ivec(j,1), GPS_BIIR.Raanvec(j,1), GPS_BIIR.omegavec(j,1), GPS_BIIR.theta0vec(j,1), Primary.mu);
+     [GPS_BIIR.r(j,:), GPS_BIIR.v(j,:)] = Kep2Car_L(GPS_BIIR.avec(j,1), GPS_BIIR.evec(j,1), GPS_BIIR.ivec(j,1), GPS_BIIR.Raanvec(j,1), GPS_BIIR.omegavec(j,1), GPS_BIIR.theta0vec(j,1), Primary.mu);
 end
 
 X = [GPS_BIIR.r(:,1), GPS_BIIR.r(:,1)];

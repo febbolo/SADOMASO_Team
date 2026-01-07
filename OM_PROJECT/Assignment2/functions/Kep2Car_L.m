@@ -1,4 +1,4 @@
-function [r0, v0] = Kep2Car(a, e, i, Raan, omega, theta, mu)
+function [r0, v0] = Kep2Car_L(a, e, i, Raan, omega, theta, mu)
 
 %KEP2CAR Conversion from Keplerian elements to Cartesian state vector
 %

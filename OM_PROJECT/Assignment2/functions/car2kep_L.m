@@ -1,10 +1,10 @@
-function kep = car2kep(r, v, mu)
+function kep = car2kep_L(r, v, mu)
 %CAR2KEP Conversion from Cartesian state to Keplerian elements.
 %
-%   kep = car2kep(r, v, mu)
+%   kep = car2kep_L(r, v, mu)
 %
 % PROTOTYPE
-%   kep = car2kep(r, v, mu)
+%   kep = car2kep_L(r, v, mu)
 %
 % DESCRIPTION
 %   This function converts a Cartesian state vector (position and velocity)

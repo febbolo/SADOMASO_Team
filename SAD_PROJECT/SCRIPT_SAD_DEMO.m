@@ -13,7 +13,7 @@
 % CONTRIBUTORS
 % Amura Fabio, 10830618, fabio.amura@mail.polimi.it
 % Crisanti Costanza, 10911209, costanza.crisanti@mail.polimi.it
-% Deli Luca 
+% Deli Luca, 10907638, luca.deli@mail.polimi.it 
 % Tomás Fadista, 11027292, tomas.nascimentodasilva@mail.polimi.it
 
 %% ------------ DATA : Earth-S/C - Sun synchronous Orbit ------------

@@ -63,15 +63,10 @@ function plotKepFiltered(t, kep, mu, filterMode)
 
     dt = median(diff(t)); % seconds between samples
 
-    % -------------------- FILTERING CHOICE (justified) --------------------
+    % -------------------- FILTERING CHOICE --------------------
     % "secular": use 1 orbit window -> removes periodic oscillations, keeps drift (J2 / long-term evolution)
     % "events" : use fixed short window (6h) -> reduces noise but preserves sharp jumps in TLE
-    % "mixed"  : use 1 day window -> smooth enough for trends, but still responsive to changes
-    %
-    % Why not same window always?
-    % - 1 orbit window is best for physical secular behavior but can hide sudden TLE jumps
-    % - 6h window is best for detecting abrupt changes but still noisy in angular elements
-    % - 1 day is a robust compromise for multi-year TLE datasets
+    % "low freq"  : use 27 day window -> smooth enough for trends, but still responsive to changes
 
     switch lower(filterMode)
         case "secular"
@@ -82,15 +77,15 @@ function plotKepFiltered(t, kep, mu, filterMode)
             w = max(5, round((6*3600)/dt));  % 6 hours
             filterLabel = sprintf("Filtered (%.1f h)", w*dt/3600);
 
-        case "mixed"
-            w = max(5, round((24*3600)/dt)); % 1 day
+        case "lowfreq"
+            w = max(5, round((24*3600*27)/dt)); % 1 day
             filterLabel = sprintf("Filtered (%.1f d)", w*dt/86400);
 
         otherwise
             error('filterMode must be "secular", "events" or "mixed"');
     end
 
-    % -------------------- PREPARE ARRAYS FOR PLOT --------------------
+    % -------------------- ARRAYS FOR PLOT --------------------
     kep_plot = zeros(N,6);
 
     kep_plot(:,1) = kep(:,1);

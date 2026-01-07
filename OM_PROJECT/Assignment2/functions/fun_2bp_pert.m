@@ -35,7 +35,7 @@ v = s(4:6); % velocity vector
 
 % Accelerazione centrale
 a_c = -parameters(2) * r / rnorm^3;
-a_tot = a_c + acc_pert_fun(t, s, parameters);
+a_tot = a_c; %+ acc_pert_fun(t, s, parameters);
 % Derivate del sistema
 dydt = [v; a_tot];
     
